@@ -18,3 +18,11 @@ cgroupfs more closely?  (I don't think so)
   that makes sense?
 
 -- Christian
+
+A general question:
+- What folders and files in `/proc` do we care about? (Reading through `man
+  procfs` gives an overview over everything we can possibly find there.) Should
+  everything be of concern to us or do we only care about a subset of the
+  folders and files?
+
+-- Christian
