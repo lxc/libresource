@@ -4,7 +4,9 @@
 
 I am upstream for lxc, lxd, cgmanager, and lxcfs.
 
-## Christian Brauner <christianvanbrauner@gmail.com>
+## Christian Brauner <christian.brauner@ubuntu.com>
+
+I am upstream for lxc, lxd, lxcfs, and glibc.
 
 # Followers
 
