@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#define RESOURCE_64	64
 #define RESOURCE_2048	2048
 
 #define eprintf(msg, ...)	fprintf(stderr,\

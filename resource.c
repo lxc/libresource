@@ -127,6 +127,8 @@ void res_destroy_blk(res_blk_t *res)
 int res_read(int res_id, void *out, void *hint, int pid, int flags)
 {
 	struct utsname t;
+	int ret;
+	int err;
 
 	if (out == NULL) {
 		switch (res_id) {
@@ -154,12 +156,22 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 
 	switch (res_id) {
 	case RES_KERN_RELEASE:
-		uname(&t);
-		strcpy(out, t.release);
+		ret = uname(&t);
+		if (ret == -1) {
+			err = errno;
+			eprintf("Error in reading kernel release");
+			errno = err;
+		}
+		strncpy(out, t.release, RESOURCE_64);
 		break;
 
 	case RES_KERN_COMPILE_TIME:
-		uname(&t);
+		ret = uname(&t);
+		if (ret == -1) {
+			err = errno;
+			eprintf("Error in reading version (for compile time)");
+			errno = err;
+		}
 		sscanf(t.version, "%*s%*s%*s%[^\t\n]", (char *) out);
 		break;
 
