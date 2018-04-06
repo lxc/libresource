@@ -161,6 +161,7 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 			err = errno;
 			eprintf("Error in reading kernel release");
 			errno = err;
+			return -1;
 		}
 		strncpy(out, t.release, RESOURCE_64);
 		break;
@@ -171,6 +172,7 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 			err = errno;
 			eprintf("Error in reading version (for compile time)");
 			errno = err;
+			return -1;
 		}
 		sscanf(t.version, "%*s%*s%*s%[^\t\n]", (char *) out);
 		break;
