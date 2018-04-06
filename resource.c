@@ -191,6 +191,7 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 	int ismeminforeq = 0;
 	int isnetdevreq = 0;
 	struct utsname t;
+	int ret;
 
 	/* Loop through all resource information. If it can be filled through
 	 * a syscall or such method then fill it. Else set flags which tell
@@ -215,15 +216,25 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_KERN_RELEASE:
-			uname(&t);
-			strcpy((res->res_unit[i]->data).str, t.release);
-			res->res_unit[i]->status = RES_STATUS_FILLED;
+			ret = uname(&t);
+			if (ret == -1) {
+				res->res_unit[i]->status = errno;
+			} else {
+				strncpy((res->res_unit[i]->data).str,
+					t.release, RESOURCE_64);
+				res->res_unit[i]->status = RES_STATUS_FILLED;
+			}
 			break;
 
 		case RES_KERN_COMPILE_TIME:
-			uname(&t);
-			sscanf(t.version, "%*s%*s%*s%[^\t\n]",
-				(res->res_unit[i]->data).str);
+			ret = uname(&t);
+			if (ret == -1) {
+				res->res_unit[i]->status = errno;
+			} else {
+				sscanf(t.version, "%*s%*s%*s%[^\t\n]",
+					(res->res_unit[i]->data).str);
+				res->res_unit[i]->status = RES_STATUS_FILLED;
+			}
 			break;
 
 		case RES_NET_IFSTAT:

@@ -153,8 +153,7 @@ static inline int getallnetinfo(void *out, void *hint)
 
 	/* Hint should not be null */
 	if (hint == NULL) {
-		eprintf(
-			"Hint should be provided for RES_NET_ALLIFSTAT");
+		eprintf("Hint should be provided for RES_NET_ALLIFSTAT");
 		errno = EINVAL;
 		return -1;
 	}
