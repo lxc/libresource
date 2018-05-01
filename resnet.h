@@ -21,7 +21,7 @@
 
 #define NETDEV_FILE "/proc/net/dev"
 
-#define NET_ALLIFSTAT_SZ    4
+#define NET_ALLIFSTAT_SZ    	1
 #define NETBUF_1024		1024
 
 extern int populate_netinfo(struct res_blk *res, int pid, int flags);

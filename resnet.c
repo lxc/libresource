@@ -148,6 +148,7 @@ static inline int getallnetinfo(void *out, void *hint)
 	int inum = 0;
 	int i;
 	res_net_ifstat_t *lst;
+	res_net_ifstat_t *rlst;
 	size_t msz = 0;
 	int err;
 
@@ -188,11 +189,26 @@ static inline int getallnetinfo(void *out, void *hint)
 		msz = sizeof(res_net_ifstat_t) * NET_ALLIFSTAT_SZ;
 		lst = (res_net_ifstat_t *)malloc(msz);
 
+		if(lst == NULL) {
+			fclose(fp);
+			errno = ENOMEM;
+			return -1;
+			
+		}
+
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
 			if (i == NET_ALLIFSTAT_SZ) {
 				msz = (sizeof(res_net_ifstat_t) * inum) +
 					NET_ALLIFSTAT_SZ;
-				lst = (res_net_ifstat_t *)realloc(lst, msz);
+				rlst = (res_net_ifstat_t *)realloc(lst, msz);
+				if(rlst == NULL) {
+					fclose(fp);
+					free(lst);
+					errno = ENOMEM;
+					return -1;
+				} else {
+					lst = rlst;
+				}
 				i = 0;
 			}
 			p = get_ifname(ifname, buf);
@@ -212,6 +228,7 @@ static inline int getallnetinfo(void *out, void *hint)
 		 * filled.
 		 */
 		if (out == NULL) {
+			fclose(fp);
 			errno = EINVAL;
 			return -1;
 		}

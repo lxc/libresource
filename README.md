@@ -89,8 +89,8 @@ res_blk_t strcut is used in all res_*_blk interfaces.
 `res_blk_t *res_build_blk(int *res_ids, int res_count);`
 
 It allocates memory for resources and initiates them properly. res_ids
-holds and array of valid resource ids and res_count holds number of
-resource ids. It also initiates struct fields properly.
+holds an array of valid resource ids and res_count holds number of
+resource ids. It also initializes struct fields properly.
 
 `int res_read_blk(res_blk_t *resblk, int pid, int flags);`
 

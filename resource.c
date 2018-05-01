@@ -47,12 +47,21 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 	 */
 	res = (res_blk_t *)
 		malloc(sizeof(res_blk_t) + (sizeof(res_unit_t *)) * res_count);
+	if (res == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
 	res->res_count = res_count;
 
 	/* Allocate and set each resource information properly */
 	for (int i = 0; i < res_count; i++) {
 		/* Allocate memory for resource info */
 		temp = (res_unit_t *)malloc(sizeof(res_unit_t));
+		if (temp == NULL) {
+			res_destroy_blk(res);
+			errno = ENOMEM;
+			return NULL;
+		}
 		memset(temp, 0, sizeof(res_unit_t));
 		temp->status = RES_STATUS_EMPTY;
 
@@ -77,19 +86,29 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 		case RES_NET_IFSTAT:
 			temp->data.ptr = (res_net_ifstat_t *)
 				malloc(sizeof(res_net_ifstat_t));
+			if (temp->data.ptr == NULL) {
+				free(temp);
+				res_destroy_blk(res);
+				errno = ENOMEM;
+				return NULL;
+			}
 			break;
 
 		case RES_MEM_INFOALL:
 			temp->data.ptr = (res_mem_infoall_t *)
 				malloc(sizeof(res_mem_infoall_t));
+			if (temp->data.ptr == NULL) {
+				free(temp);
+				res_destroy_blk(res);
+				errno = ENOMEM;
+				return NULL;
+			}
 			break;
 
 		default:
 			eprintf("Invalid resource ID: %d", res_ids[i]);
-			while (--i >= 0)
-				free(res->res_unit[i]);
 			free(temp);
-			free(res);
+			res_destroy_blk(res);
 			errno = EINVAL;
 			return NULL;
 		}
@@ -112,6 +131,7 @@ void res_destroy_blk(res_blk_t *res)
 		case RES_NET_IFSTAT:
 		case RES_MEM_INFOALL:
 			free((res->res_unit[i])->data.ptr);
+			(res->res_unit[i])->data.ptr = NULL;
 			break;
 		}
 
