@@ -8,6 +8,8 @@ I am upstream for lxc, lxd, cgmanager, and lxcfs.
 
 I am upstream for lxc, lxd, lxcfs, and glibc.
 
+## Rahul Yadav <rahul.x.yadav@oracle.com>
+
 # Followers
 
 People who are interested in using libresource (if it "happens") but do not
