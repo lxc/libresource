@@ -150,6 +150,7 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 	int ret;
 	int err;
 
+
 	if (out == NULL) {
 		switch (res_id) {
 		/* In case of RES_NET_ALLIFSTAT memory is allocated on the
@@ -171,8 +172,9 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 		return getmeminfo(res_id, out, hint, pid, flags);
 
 	/* Check if net proc file is needed to open */
-	if (res_id >= NET_MIN && res_id < NET_MAX)
+	if (res_id >= NET_MIN && res_id < NET_MAX) {
 		return getnetinfo(res_id, out, hint, pid, flags);
+	}
 
 	switch (res_id) {
 	case RES_KERN_RELEASE:

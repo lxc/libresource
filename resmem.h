@@ -26,6 +26,8 @@
 #define MEMBUF_128	128
 #define MEMBUF_2048	2048
 
+#define MEMCGNAME	"memory"
+
 extern int populate_meminfo(struct res_blk *res, int pid, int flags);
 extern int getmeminfo(int res_id, void *out, void *hint, int pid, int flags);
 

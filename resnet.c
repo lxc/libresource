@@ -198,8 +198,8 @@ static inline int getallnetinfo(void *out, void *hint)
 
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
 			if (i == NET_ALLIFSTAT_SZ) {
-				msz = (sizeof(res_net_ifstat_t) * inum) +
-					NET_ALLIFSTAT_SZ;
+				msz = sizeof(res_net_ifstat_t) * (inum +
+					NET_ALLIFSTAT_SZ);
 				rlst = (res_net_ifstat_t *)realloc(lst, msz);
 				if(rlst == NULL) {
 					fclose(fp);
