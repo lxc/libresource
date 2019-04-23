@@ -29,6 +29,11 @@
 #define FNAMELEN	RESOURCE_256
 
 #define INITSCOPE	"/init.scope"
+
+/* We are assuming that cgroup is mounted at its usual location,
+ * If we have reeust from applications who do not mount cgroup at
+ * usual location, then we need to change this.
+ */
 #define DEFAULTCGFS	"/sys/fs/cgroup"
 
 #define eprintf(msg, ...)	fprintf(stderr,\
@@ -52,6 +57,7 @@ static inline void clean_init(char *cg)
 	}
 }
 
+/* Get cgroup path for a particular controller */
 static inline char *get_cgroup(pid_t pid, const char *contrl)
 {
 	char fn[FNAMELEN];
@@ -63,11 +69,14 @@ static inline char *get_cgroup(pid_t pid, const char *contrl)
 	char *cgrp = NULL;
 	char *c1, *c2;
 
+	/* If no pid is provided then return cgroup info for current process.
+	 */
 	if (pid) {
 		ret = snprintf(fn, FNAMELEN, "/proc/%d/cgroup", pid);
 	} else {
 		ret = snprintf(fn, FNAMELEN, "/proc/self/cgroup");
 	}
+
 	if (ret < 0 || ret >= FNAMELEN)
 		return NULL;
 
@@ -135,6 +144,5 @@ static inline int file_to_buf(char *fname, char *buf, unsigned int bufsz)
 	close(fd);
 	return rdsz;
 }
-
 
 #endif /* _RESOURCE_IMPL_H */
