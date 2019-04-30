@@ -21,6 +21,7 @@
 
 #include <fcntl.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define RESOURCE_64	64
 #define RESOURCE_256	256
@@ -40,6 +41,28 @@
 					"Err at line %d in file %s: "msg"\n",\
 					__LINE__, __FILE__, ##__VA_ARGS__)\
 
+#define libres_iterate_parts(__iterator, __str, __separators)		   \
+	for (char *__p = NULL, *__it = strtok_r(__str, __separators, &__p);\
+		(__iterator = __it);                                       \
+		__iterator = __it = strtok_r(NULL, __separators, &__p))
+
+static inline int libres_ulong(char *numstr, unsigned long *converted)
+{
+	char *endptr = NULL;
+	unsigned long uli;
+
+	errno = 0;
+	uli = strtoul(numstr, &endptr, 10);
+
+	if (errno == ERANGE || endptr == numstr ||
+		(*endptr != '\0' && *endptr != '\n')) {
+		return -EINVAL;
+	}
+
+	*converted = uli;
+	return 0;
+}
+
 static inline void clean_init(char *cg)
 {
 	char *p;
@@ -55,6 +78,18 @@ static inline void clean_init(char *cg)
 		else
 			*p = '\0';
 	}
+}
+
+/* Find a cgroup controller in list of comma(,) seperated cgroup controller
+ * list.
+ */
+static inline int controller_in_clist(char *cgline, const char *c)
+{
+	char *tok;
+	libres_iterate_parts(tok, cgline, ",")
+		if (strcmp(tok, c) == 0)
+			return 1;
+	return 0;
 }
 
 /* Get cgroup path for a particular controller */
@@ -90,21 +125,20 @@ static inline char *get_cgroup(pid_t pid, const char *contrl)
 		if (!c1)
 			goto out;
 		c1++;
+
 		c2 = strchr(c1, ':');
 		if (!c2)
 			goto out;
 		*c2 = '\0';
-		if (strcmp(c1, contrl) != 0)
+		if (!controller_in_clist(c1, contrl))
 			continue;
 		c2++;
 		l = strlen(c2);
 		if (l && c2[l-1] == '\n')
 			c2[l-1] = '\0';
-		if(strcmp(c2, "/") == 0)
+		if (strcmp(c2, "/") == 0)
 			goto out;
-		do {
-			cgrp = strdup(c2);
-		} while (!cgrp);
+		cgrp = strdup(c2);
 		break;
 	}
 

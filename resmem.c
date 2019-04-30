@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <libgen.h>
 
-#define startswith(str, buf) strncmp(str, buf, sizeof(str) - 1)
+#define startswith(str, buf) (strncmp(str, buf, sizeof(str) - 1) == 0)
 
 /* read a specific information from file on the basis of a string.
  * String should tell what information is being read.
@@ -58,6 +58,7 @@ static inline size_t cgmemread(char *cg, char *file)
 {
 	char buf[MEMBUF_128];
 	char fn[FNAMELEN];
+	unsigned long ret;
 
 	snprintf(fn, FNAMELEN, "%s/%s%s/%s", DEFAULTCGFS,
 		MEMCGNAME, cg, file);
@@ -65,7 +66,11 @@ static inline size_t cgmemread(char *cg, char *file)
 	if (file_to_buf(fn, buf, MEMBUF_128) == -1)
 		return 0;
 
-	return (strtoul(buf, NULL, 10) / 1024);
+	if (libres_ulong(buf, &ret) != 0) {
+		return 0;
+	} else {
+		return ret / 1024;
+	}
 }
 
 /* read memory limit from cgorup file
@@ -81,7 +86,10 @@ static size_t cgmemlimit(char *cg, char *f)
 		return 0;
 	}
 
-	copy = strdup(cg);
+	if ((copy = strdup(cg)) == NULL) {
+		return 0;
+	}
+
 	dir = dirname(copy);
 
 	/*read memory limit for parant cg */
@@ -124,6 +132,7 @@ static int getmeminfoall(char *cg, void *out)
 	FILE *fp;
 	int err;
 	char buf[MEMBUF_128];
+	res_mem_infoall_t *memall = out;
 
 	snprintf(fn, FNAMELEN, "%s/%s%s/%s", DEFAULTCGFS,
 		MEMCGNAME, cg, "memory.stat");
@@ -138,19 +147,19 @@ static int getmeminfoall(char *cg, void *out)
 	}
 
 	while(fgets(buf, sizeof(buf), fp) != NULL) {
-		if (startswith("cache", buf) == 0) {
+		if (startswith("cache", buf)) {
 			sscanf(buf, "%*s%zu", &cache);
 			cache /= 1024;
-		} else if (startswith("active_anon", buf) == 0) {
+		} else if (startswith("active_anon", buf)) {
 			sscanf(buf, "%*s%zu", &active_anon);
 			active_anon /= 1024;
-		} else if (startswith("inactive_anon", buf) == 0) {
+		} else if (startswith("inactive_anon", buf)) {
 			sscanf(buf, "%*s%zu", &inactive_anon);
 			inactive_anon /= 1024;
-		} else if (startswith("active_file", buf) == 0) {
+		} else if (startswith("active_file", buf)) {
 			sscanf(buf, "%*s%zu", &active_file);
 			active_file /= 1024;
-		} else if (startswith("inactive_file", buf) == 0) {
+		} else if (startswith("inactive_file", buf)) {
 			sscanf(buf, "%*s%zu", &inactive_file);
 			inactive_file /= 1024;
 		}
@@ -167,11 +176,11 @@ static int getmeminfoall(char *cg, void *out)
 	}
 
 	while(fgets(buf, sizeof(buf), fp) != NULL) {
-		if (startswith("MemTotal", buf) == 0) {
+		if (startswith("MemTotal", buf)) {
 			sscanf(buf, "%*s%zu", &memtotal);
-		} else if (startswith("SwapTotal", buf) == 0) {
+		} else if (startswith("SwapTotal", buf)) {
 			sscanf(buf, "%*s%zu", &swaptotal);
-		} else if (startswith("SwapFree", buf) == 0) {
+		} else if (startswith("SwapFree", buf)) {
 			sscanf(buf, "%*s%zu", &swapfree);
 		}
 	}
@@ -183,11 +192,11 @@ static int getmeminfoall(char *cg, void *out)
 		mmtot = memtotal;
 	}
 
-	((res_mem_infoall_t *)out)->memfree = mmtot - mmusage;
-	((res_mem_infoall_t *)out)->memavailable = mmtot - mmusage + cache;
-	((res_mem_infoall_t *)out)->memtotal = mmtot;
-	((res_mem_infoall_t *)out)->active = active_anon + active_file;
-	((res_mem_infoall_t *)out)->inactive = inactive_anon + inactive_file;
+	memall->memfree = mmtot - mmusage;
+	memall->memavailable = mmtot - mmusage + cache;
+	memall->memtotal = mmtot;
+	memall->active = active_anon + active_file;
+	memall->inactive = inactive_anon + inactive_file;
 
 	swusage = cgmemread(cg, "memory.memsw.usage_in_bytes");
 	swtot = cgmemlimit(cg, "memory.memsw.limit_in_bytes");
@@ -200,8 +209,8 @@ static int getmeminfoall(char *cg, void *out)
 		swapfree = (swusage < swaptotal) ? swaptotal - swusage : 0;
 	}
 
-	((res_mem_infoall_t *)out)->swaptotal = swaptotal;
-	((res_mem_infoall_t *)out)->swapfree = swapfree;
+	memall->swaptotal = swaptotal;
+	memall->swapfree = swapfree;
 
 	return 0;
 }
@@ -224,7 +233,7 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 
 	switch (res_id) {
 		/* if process is part of a cgroup then return memory info
-		 *for that cgroup only.
+		 * for that cgroup only.
 		 */
 	case RES_MEM_FREE:
 		if (cg) {
@@ -258,6 +267,7 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 			cache = cgmemstat(cg, "cache");
 
 			*(size_t *)out = mmtot - mmusage + cache;
+
 			return 0;
 		} else {
 			return get_info_infile(MEMINFO_FILE, "MemAvailable:",
@@ -299,7 +309,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		if (cg) {
 			swtot = cgmemlimit(cg,
 				"memory.memsw.limit_in_bytes");
-			if (ret != -1 && swtot > 0 && *(size_t *)out > swtot) {
+			if (ret != -1 && swtot > 0 &&
+				*(size_t *)out > swtot) {
 				*(size_t *)out = swtot;
 			}
 		}
@@ -353,25 +364,25 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		 * is required.
 		 */
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			if (startswith("MemTotal:", buf) == 0) {
+			if (startswith("MemTotal:", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->memtotal);
-			} else if (startswith("MemFree:", buf) == 0) {
+			} else if (startswith("MemFree:", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->memfree);
-			} else if (startswith("MemAvailable:", buf) == 0) {
+			} else if (startswith("MemAvailable:", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->memavailable);
-			} else if (startswith("Active", buf) == 0) {
+			} else if (startswith("Active", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->active);
-			} else if (startswith("Inactive", buf) == 0) {
+			} else if (startswith("Inactive", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->inactive);
-			} else if (startswith("SwapTotal", buf) == 0) {
+			} else if (startswith("SwapTotal", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->swaptotal);
-			} else if (startswith("SwapFree", buf) == 0) {
+			} else if (startswith("SwapFree", buf)) {
 				sscanf(buf, "%*s%zu",
 				&((res_mem_infoall_t *)out)->swapfree);
 			}
