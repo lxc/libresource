@@ -353,8 +353,6 @@ int populate_netinfo(res_blk_t *res, int pid, int flags)
 				res->res_unit[i]->data.ptr = p;
 			}
 			break;
-		default:
-			res->res_unit[i]->status = RES_STATUS_NOTSUPPORTED;
 		}
 	}
 	return 0;

@@ -224,6 +224,7 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 	size_t active_anon, active_file, inactive_anon, inactive_file, cache,
 		swaptotal, swapfree, swtot, swusage, mmusage, mmtot, memtotal;
 	int ret = 0;
+	res_mem_infoall_t *mminfo;
 
 	char *cg = get_cgroup(pid, MEMCGNAME);
 
@@ -360,31 +361,25 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 			errno = err;
 			return -1;
 		}
+		mminfo = (res_mem_infoall_t *)out;
 		/* Read through file and populate all information which
 		 * is required.
 		 */
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
 			if (startswith("MemTotal:", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->memtotal);
+				sscanf(buf, "%*s%zu", &mminfo->memtotal);
 			} else if (startswith("MemFree:", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->memfree);
+				sscanf(buf, "%*s%zu", &mminfo->memfree);
 			} else if (startswith("MemAvailable:", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->memavailable);
+				sscanf(buf, "%*s%zu", &mminfo->memavailable);
 			} else if (startswith("Active", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->active);
+				sscanf(buf, "%*s%zu", &mminfo->active);
 			} else if (startswith("Inactive", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->inactive);
+				sscanf(buf, "%*s%zu", &mminfo->inactive);
 			} else if (startswith("SwapTotal", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->swaptotal);
+				sscanf(buf, "%*s%zu", &mminfo->swaptotal);
 			} else if (startswith("SwapFree", buf)) {
-				sscanf(buf, "%*s%zu",
-				&((res_mem_infoall_t *)out)->swapfree);
+				sscanf(buf, "%*s%zu", &mminfo->swapfree);
 			}
 		}
 		fclose(fp);
@@ -413,6 +408,7 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 		memavailable = 0, memfree = 0, memactive = 0, meminactive = 0;
 
 	char *cg = get_cgroup(pid, MEMCGNAME);
+	res_mem_infoall_t *mminfo;
 
 	if (cg) {
 		clean_init(cg);
@@ -492,6 +488,9 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 		case RES_MEM_TOTAL:
 			if (!memtotal)
 				SCANMEMSTR("MemTotal:", memtotal);
+			else
+				(res->res_unit[i]->data).sz = memtotal;
+
 			if (cg) {
 				if (!mmtot)
 					mmtot = cgmemlimit(cg,
@@ -504,8 +503,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 
 		case RES_MEM_ACTIVE:
 			if (cg) {
-				active_anon = cgmemstat(cg, "active_anon");
-				active_file = cgmemstat(cg, "active_file");
+				active_anon = cgmemstat(cg, "\nactive_anon");
+				active_file = cgmemstat(cg, "\nactive_file");
 				(res->res_unit[i]->data).sz =
 					active_anon + active_file;
 				res->res_unit[i]->status = RES_STATUS_FILLED;
@@ -516,8 +515,10 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 
 		case RES_MEM_INACTIVE:
 			if (cg) {
-				inactive_anon = cgmemstat(cg, "inactive_anon");
-				inactive_file = cgmemstat(cg, "inactive_file");
+				inactive_anon = cgmemstat(cg,
+					"\ninactive_anon");
+				inactive_file = cgmemstat(cg,
+					"\ninactive_file");
 				(res->res_unit[i]->data).sz =
 					inactive_anon + inactive_file;
 				res->res_unit[i]->status = RES_STATUS_FILLED;
@@ -529,6 +530,9 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 		case RES_MEM_SWAPTOTAL:
 			if (!swaptotal)
 				SCANMEMSTR("SwapTotal:", swaptotal);
+			else
+				(res->res_unit[i]->data).sz = swaptotal;
+
 			if (cg) {
 				swtot = cgmemlimit(cg,
 					"memory.memsw.limit_in_bytes");
@@ -586,33 +590,26 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 				res->res_unit[i]->status = RES_STATUS_FILLED;
 				break;
 			}
+			mminfo = (res_mem_infoall_t *)
+				(res->res_unit[i]->data).ptr;
 
 			loc = strstr(buf, "MemTotal:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->memtotal);
+			sscanf(loc, "%*s%zu", &mminfo->memtotal);
 			loc = strstr(buf, "MemFree:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->memfree);
+			sscanf(loc, "%*s%zu", &mminfo->memfree);
 			loc = strstr(buf, "MemAvailable:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->memavailable);
+			sscanf(loc, "%*s%zu", &mminfo->memavailable);
 			loc = strstr(buf, "Active:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->active);
+			sscanf(loc, "%*s%zu", &mminfo->active);
 			loc = strstr(buf, "Inactive:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->inactive);
+			sscanf(loc, "%*s%zu", &mminfo->inactive);
 			loc = strstr(buf, "SwapTotal:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->swaptotal);
+			sscanf(loc, "%*s%zu", &mminfo->swaptotal);
 			loc = strstr(buf, "SwapFree:");
-			sscanf(loc, "%*s%zu", &((res_mem_infoall_t *)
-				(res->res_unit[i]->data).ptr)->swapfree);
+			sscanf(loc, "%*s%zu", &mminfo->swapfree);
 
 			res->res_unit[i]->status = RES_STATUS_FILLED;
 			break;
-		default:
-			res->res_unit[i]->status = RES_STATUS_NOTSUPPORTED;
 		}
 	}
 	return 0;
