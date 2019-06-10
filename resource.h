@@ -68,6 +68,7 @@ typedef struct res_unit {
 	unsigned int res_id;
 	void *hint;
 	union r_data data;
+	size_t data_sz;
 } res_unit_t;
 
 /* In case of bulk read (res_read_blk), this structure will hold all required
@@ -157,7 +158,9 @@ extern int res_read_blk(res_blk_t *resblk, int pid, int flags);
 /* Free allocated memory from res_build_blk */
 extern void res_destroy_blk(res_blk_t *resblk);
 
-/* Read a resource information. Memory for out should be properly allocated */
-extern int res_read(int res_id, void *out, void *hint, int pid, int flags);
+/* Read a resource information. Memory for out should be properly allocated.
+ * Also size of allocated memory should be passed in out_sz.
+ */
+extern int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags);
 
 #endif /* RESOURCE_H */

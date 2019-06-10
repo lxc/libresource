@@ -25,6 +25,7 @@
 #define NETBUF_1024		1024
 
 extern int populate_netinfo(struct res_blk *res, int pid, int flags);
-extern int getnetinfo(int res_id, void *out, void *hint, int pid, int flags);
+extern int getnetinfo(int res_id, void *out, size_t sz, void *hint, int pid,
+		int flags);
 
 #endif /* _RESNET_H */
