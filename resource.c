@@ -152,6 +152,7 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 	struct utsname t;
 	int ret;
 	int err;
+	char *rawdata;
 
 	if (out == NULL) {
 		switch (res_id) {
@@ -198,8 +199,8 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 			errno = err;
 			return -1;
 		}
-		sscanf(t.version, "%*s%*s%*s%[^\t\n]", t.version);
-		strncpy(out, t.version, out_sz-1);
+		rawdata = skip_spaces(t.version, strlen(t.version), 3);
+		strncpy(out, rawdata, out_sz-1);
 		((char *)out)[out_sz-1] = '\0';
 		break;
 
@@ -220,6 +221,7 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 	int ret;
 	char *out;
 	size_t len;
+	char *rawdata;
 
 	/* Loop through all resource information. If it can be filled through
 	 * a syscall or such method then fill it. Else set flags which tell
@@ -265,11 +267,11 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 			if (ret == -1) {
 				res->res_unit[i]->status = errno;
 			} else {
-				sscanf(t.version, "%*s%*s%*s%[^\t\n]",
-					t.version);
+				rawdata = skip_spaces(t.version,
+					strlen(t.version), 3);
 				out = (res->res_unit[i]->data).str;
 				len = sizeof(union r_data);
-				strncpy(out, t.version, len-1);
+				strncpy(out, rawdata, len-1);
 				out[len-1] = '\0';
 				res->res_unit[i]->status = RES_STATUS_FILLED;
 			}

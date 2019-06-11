@@ -272,8 +272,8 @@ int getnetinfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 
 		/* Interface name should be provided */
 		if (hint == NULL) {
-			eprintf(
-				"Interface name is not provided");
+			eprintf("Interface name is not provided for "
+				"RES_NET_STAT");
 			errno = EINVAL;
 			return -1;
 		}
