@@ -46,6 +46,24 @@
 		(__iterator = __it);                                       \
 		__iterator = __it = strtok_r(NULL, __separators, &__p))
 
+/* Helper function to skip first n spaces from string s and return
+ * pointer to string after that. If len is reached before we get n spaces,
+ * null is returned.
+ */
+static inline char *skip_spaces(char *s, size_t len, int n) {
+	size_t i = 0;
+	int spacenum = 0;
+	while(i++ < len) {
+		if (*s++ == ' ') {
+			spacenum++;
+			if (spacenum == n) {
+				return s;
+			}
+		}
+	}
+	return NULL;
+}
+
 static inline int libres_ulong(char *numstr, unsigned long *converted)
 {
 	char *endptr = NULL;

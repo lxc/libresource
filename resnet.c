@@ -249,7 +249,7 @@ static inline int getallnetinfo(void *out, void *hint)
 }
 
 /* Get resource information related to network */
-int getnetinfo(int res_id, void *out, void *hint, int pid, int flags)
+int getnetinfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 {
 	char buf[NETBUF_1024];
 	FILE *fp;
@@ -258,12 +258,22 @@ int getnetinfo(int res_id, void *out, void *hint, int pid, int flags)
 	int ver = 0;
 	char *p;
 
+#define CHECK_SIZE(sz, req_sz)						\
+	if (sz < req_sz) {						\
+		eprintf("memory (%ld) is not enough to hold data (%ld)",\
+			sz, req_sz);					\
+		errno = ENOMEM;						\
+		return -1;						\
+	}
+
 	switch (res_id) {
 	case RES_NET_IFSTAT:
+		CHECK_SIZE(sz, sizeof(res_net_ifstat_t));
+
 		/* Interface name should be provided */
 		if (hint == NULL) {
-			eprintf(
-				"Interface name is not provided for RES_NET_IFSTAT");
+			eprintf("Interface name is not provided for "
+				"RES_NET_STAT");
 			errno = EINVAL;
 			return -1;
 		}
@@ -319,6 +329,8 @@ int getnetinfo(int res_id, void *out, void *hint, int pid, int flags)
 		return -1;
 	}
 
+#undef CHECK_SIZE
+
 	return 0;
 }
 
@@ -334,6 +346,7 @@ int populate_netinfo(res_blk_t *res, int pid, int flags)
 		case RES_NET_IFSTAT:
 			if (getnetinfo(RES_NET_IFSTAT,
 				res->res_unit[i]->data.ptr,
+				res->res_unit[i]->data_sz,
 				res->res_unit[i]->hint, 0, 0) == -1) {
 				res->res_unit[i]->status = errno;
 			} else
@@ -345,7 +358,7 @@ int populate_netinfo(res_blk_t *res, int pid, int flags)
 			 */
 			res->res_unit[i]->hint = (int)0;
 
-			if (getnetinfo(RES_NET_ALLIFSTAT, &p,
+			if (getnetinfo(RES_NET_ALLIFSTAT, &p, 0,
 				&(res->res_unit[i]->hint), 0, 0) == -1) {
 				res->res_unit[i]->status = errno;
 			} else {

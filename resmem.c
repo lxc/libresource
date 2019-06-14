@@ -92,7 +92,7 @@ static size_t cgmemlimit(char *cg, char *f)
 
 	dir = dirname(copy);
 
-	/*read memory limit for parant cg */
+	/*read memory limit for parent cg */
 	if (strcmp(dir, "/") != 0) {
 		if((mem = cgmemread(dir, f)) == 0) {
 			free(copy);
@@ -216,7 +216,7 @@ static int getmeminfoall(char *cg, void *out)
 }
 
 /* Read resource information corresponding to res_id */
-int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
+int getmeminfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 {
 	char buf[MEMBUF_128];
 	FILE *fp;
@@ -232,11 +232,22 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		clean_init(cg);
 	}
 
+#define CHECK_SIZE(sz, req_sz)						\
+	if (sz < req_sz) {						\
+		eprintf("memory (%ld) is not enough to hold data (%ld)",\
+		sz, req_sz);						\
+		errno = ENOMEM;						\
+		return -1;						\
+	}
+
+
 	switch (res_id) {
 		/* if process is part of a cgroup then return memory info
 		 * for that cgroup only.
 		 */
 	case RES_MEM_FREE:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		if (cg) {
 			mmusage = cgmemread(cg, "memory.usage_in_bytes");
 			if (get_info_infile(MEMINFO_FILE, "MemTotal:",
@@ -254,6 +265,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		}
 
 	case RES_MEM_AVAILABLE:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		if (cg) {
 			mmusage = cgmemread(cg, "memory.usage_in_bytes");
 			if (get_info_infile(MEMINFO_FILE, "MemTotal:",
@@ -276,6 +289,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		}
 
 	case RES_MEM_TOTAL:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		ret = get_info_infile(MEMINFO_FILE, "MemTotal:", out);
 		if (cg) {
 			mmtot = cgmemlimit(cg, "memory.limit_in_bytes");
@@ -286,6 +301,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		return ret;
 
 	case RES_MEM_ACTIVE:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		if (cg) {
 			active_anon = cgmemstat(cg, "\nactive_anon");
 			active_file = cgmemstat(cg, "\nactive_file");
@@ -296,6 +313,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		}
 
 	case RES_MEM_INACTIVE:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		if (cg) {
 			inactive_anon = cgmemstat(cg, "\ninactive_anon");
 			inactive_file = cgmemstat(cg, "\ninactive_file");
@@ -306,6 +325,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		}
 
 	case RES_MEM_SWAPTOTAL:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		ret = get_info_infile(MEMINFO_FILE, "SwapTotal:", out);
 		if (cg) {
 			swtot = cgmemlimit(cg,
@@ -318,6 +339,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		return ret;
 
 	case RES_MEM_SWAPFREE:
+		CHECK_SIZE(sz, sizeof(size_t));
+
 		if (cg) {
 			swusage = cgmemread(cg, "memory.memsw.usage_in_bytes");
 			swtot = cgmemlimit(cg,
@@ -346,6 +369,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		return get_info_infile(MEMINFO_FILE, "SwapFree:", out);
 
 	case RES_MEM_INFOALL:
+		CHECK_SIZE(sz, sizeof(res_mem_infoall_t));
+
 		if (cg) {
 			if (getmeminfoall(cg, out) == -1) {
 				return -1;
@@ -386,6 +411,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		break;
 
 	case RES_MEM_PAGESIZE:
+		CHECK_SIZE(sz, sizeof(long));
+
 		*(size_t *)out = sysconf(_SC_PAGESIZE);
 		break;
 
@@ -394,6 +421,8 @@ int getmeminfo(int res_id, void *out, void *hint, int pid, int flags)
 		errno = EINVAL;
 		return -1;
 	}
+
+#undef CHECK_SIZE
 
 	return 0;
 }
@@ -415,8 +444,19 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 	}
 
 	if (file_to_buf(MEMINFO_FILE, buf, MEMBUF_2048) == -1) {
-		for (int i = 0 ; i < res->res_count; i++)
-			res->res_unit[i]->status = errno;
+		for (int i = 0 ; i < res->res_count; i++) {
+			switch (res->res_unit[i]->res_id) {
+			case RES_MEM_FREE:
+			case RES_MEM_AVAILABLE:
+			case RES_MEM_TOTAL:
+			case RES_MEM_ACTIVE:
+			case RES_MEM_INACTIVE:
+			case RES_MEM_SWAPTOTAL:
+			case RES_MEM_SWAPFREE:
+			case RES_MEM_INFOALL:
+				res->res_unit[i]->status = errno;
+			}
+		}
 		return -1;
 	}
 
@@ -435,11 +475,22 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 	} \
 } while (0)\
 
+/* Macro to check if enough memory is allocated to hold the data.
+ */
+#define CHECK_SIZE(sz, data_sz)						\
+	if (sz < data_sz) {						\
+		eprintf("memory (%ld) is not enough to hold data (%ld)",\
+                        sz, data_sz);					\
+		res->res_unit[i]->status = ENOMEM;			\
+		break;							\
+	}
 
 	for (int i = 0; i < res->res_count; i++) {
 		loc = NULL;
 		switch (res->res_unit[i]->res_id) {
 		case RES_MEM_FREE:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (cg) {
 				if (!mmusage)
 					mmusage = cgmemread(cg,
@@ -462,6 +513,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_AVAILABLE:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (cg) {
 				if (!mmusage)
 					mmusage = cgmemread(cg,
@@ -486,6 +539,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_TOTAL:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (!memtotal)
 				SCANMEMSTR("MemTotal:", memtotal);
 			else
@@ -502,6 +557,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_ACTIVE:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (cg) {
 				active_anon = cgmemstat(cg, "\nactive_anon");
 				active_file = cgmemstat(cg, "\nactive_file");
@@ -514,6 +571,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_INACTIVE:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (cg) {
 				inactive_anon = cgmemstat(cg,
 					"\ninactive_anon");
@@ -528,6 +587,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_SWAPTOTAL:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			if (!swaptotal)
 				SCANMEMSTR("SwapTotal:", swaptotal);
 			else
@@ -544,6 +605,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_SWAPFREE:
+			CHECK_SIZE(res->res_unit[i]->data_sz, sizeof(size_t));
+
 			SCANMEMSTR("SwapFree:", swapfree);
 
 			if (cg) {
@@ -576,11 +639,10 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			}
 			break;
 
-		case RES_MEM_PAGESIZE:
-			(res->res_unit[i]->data).sz = sysconf(_SC_PAGESIZE);
-			break;
-
 		case RES_MEM_INFOALL:
+			CHECK_SIZE(res->res_unit[i]->data_sz,
+				sizeof(res_mem_infoall_t));
+
 			if (cg) {
 				if (getmeminfoall(cg,
 					(res->res_unit[i]->data).ptr) == -1) {
@@ -612,5 +674,8 @@ int populate_meminfo(res_blk_t *res, int pid, int flags)
 			break;
 		}
 	}
+
+#undef CHECK_SIZE
+
 	return 0;
 }

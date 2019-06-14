@@ -81,6 +81,7 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 		case RES_KERN_COMPILE_TIME:
 		case RES_KERN_RELEASE:
 		case RES_NET_ALLIFSTAT:
+			temp->data_sz = sizeof(union r_data);
 			break;
 
 		case RES_NET_IFSTAT:
@@ -92,6 +93,7 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 				errno = ENOMEM;
 				return NULL;
 			}
+			temp->data_sz = sizeof(res_net_ifstat_t);
 			break;
 
 		case RES_MEM_INFOALL:
@@ -103,6 +105,7 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 				errno = ENOMEM;
 				return NULL;
 			}
+			temp->data_sz = sizeof(res_mem_infoall_t);
 			break;
 
 		default:
@@ -144,11 +147,12 @@ void res_destroy_blk(res_blk_t *res)
 /* read resource information corresponding to res_id, out should have been
  * properly allocated by caller if required.
  */
-int res_read(int res_id, void *out, void *hint, int pid, int flags)
+int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags)
 {
 	struct utsname t;
 	int ret;
 	int err;
+	char *rawdata;
 
 	if (out == NULL) {
 		switch (res_id) {
@@ -168,11 +172,11 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 
 	/* Check if memory proc file is needed to open */
 	if (res_id >= MEM_MIN && res_id < MEM_MAX)
-		return getmeminfo(res_id, out, hint, pid, flags);
+		return getmeminfo(res_id, out, out_sz, hint, pid, flags);
 
 	/* Check if net proc file is needed to open */
 	if (res_id >= NET_MIN && res_id < NET_MAX)
-		return getnetinfo(res_id, out, hint, pid, flags);
+		return getnetinfo(res_id, out, out_sz, hint, pid, flags);
 
 	switch (res_id) {
 	case RES_KERN_RELEASE:
@@ -183,7 +187,8 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 			errno = err;
 			return -1;
 		}
-		strncpy(out, t.release, RESOURCE_64);
+		strncpy(out, t.release, out_sz-1);
+		((char *)out)[out_sz-1] = '\0';
 		break;
 
 	case RES_KERN_COMPILE_TIME:
@@ -194,7 +199,9 @@ int res_read(int res_id, void *out, void *hint, int pid, int flags)
 			errno = err;
 			return -1;
 		}
-		sscanf(t.version, "%*s%*s%*s%[^\t\n]", (char *) out);
+		rawdata = skip_spaces(t.version, strlen(t.version), 3);
+		strncpy(out, rawdata, out_sz-1);
+		((char *)out)[out_sz-1] = '\0';
 		break;
 
 	default:
@@ -212,6 +219,9 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 	int isnetdevreq = 0;
 	struct utsname t;
 	int ret;
+	char *out;
+	size_t len;
+	char *rawdata;
 
 	/* Loop through all resource information. If it can be filled through
 	 * a syscall or such method then fill it. Else set flags which tell
@@ -231,8 +241,12 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 			break;
 
 		case RES_MEM_PAGESIZE:
-			(res->res_unit[i]->data).sz = sysconf(_SC_PAGESIZE);
-			res->res_unit[i]->status = RES_STATUS_FILLED;
+			if (res->res_unit[i]->data_sz < sizeof(long)) {
+				res->res_unit[i]->status = ENOMEM;
+			} else {
+				(res->res_unit[i]->data).sz = sysconf(_SC_PAGESIZE);
+				res->res_unit[i]->status = RES_STATUS_FILLED;
+			}
 			break;
 
 		case RES_KERN_RELEASE:
@@ -240,8 +254,10 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 			if (ret == -1) {
 				res->res_unit[i]->status = errno;
 			} else {
-				strncpy((res->res_unit[i]->data).str,
-					t.release, RESOURCE_64);
+				out = (res->res_unit[i]->data).str;
+				len = sizeof(union r_data);
+				strncpy(out, t.release, len-1);
+				out[len-1] = '\0';
 				res->res_unit[i]->status = RES_STATUS_FILLED;
 			}
 			break;
@@ -251,8 +267,12 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 			if (ret == -1) {
 				res->res_unit[i]->status = errno;
 			} else {
-				sscanf(t.version, "%*s%*s%*s%[^\t\n]",
-					(res->res_unit[i]->data).str);
+				rawdata = skip_spaces(t.version,
+					strlen(t.version), 3);
+				out = (res->res_unit[i]->data).str;
+				len = sizeof(union r_data);
+				strncpy(out, rawdata, len-1);
+				out[len-1] = '\0';
 				res->res_unit[i]->status = RES_STATUS_FILLED;
 			}
 			break;
