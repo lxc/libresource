@@ -20,6 +20,7 @@
  */
 
 #include "resource.h"
+#include <stdbool.h>
 #include <malloc.h>
 #include <string.h>
 #include <unistd.h>
@@ -28,6 +29,7 @@
 #include "resource_impl.h"
 #include "resmem.h"
 #include "resnet.h"
+#include "resproc.h"
 
 /* Allocate memory for bulk resource information and initiate it
  * properly.
@@ -108,6 +110,18 @@ res_blk_t *res_build_blk(int *res_ids, int res_count)
 			temp->data_sz = sizeof(res_mem_infoall_t);
 			break;
 
+		case RES_PROC_INFOALL:
+			temp->data.ptr = (res_proc_infoall_t *)
+				malloc(sizeof(res_proc_infoall_t));
+			if (temp->data.ptr == NULL) {
+				free(temp);
+				res_destroy_blk(res);
+				errno = ENOMEM;
+				return NULL;
+			}
+			temp->data_sz = sizeof(res_proc_infoall_t);
+			break;
+
 		default:
 			eprintf("Invalid resource ID: %d", res_ids[i]);
 			free(temp);
@@ -133,6 +147,7 @@ void res_destroy_blk(res_blk_t *res)
 		switch (res->res_unit[i]->res_id) {
 		case RES_NET_IFSTAT:
 		case RES_MEM_INFOALL:
+		case RES_PROC_INFOALL:
 			free((res->res_unit[i])->data.ptr);
 			(res->res_unit[i])->data.ptr = NULL;
 			break;
@@ -169,6 +184,9 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 			return -1;
 		}
 	}
+
+	if (res_id >= PROC_MIN && res_id < PROC_MAX)
+		return getprocinfo(res_id, out, out_sz, hint, pid, flags);
 
 	/* Check if memory proc file is needed to open */
 	if (res_id >= MEM_MIN && res_id < MEM_MAX)
@@ -215,8 +233,9 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 /* Read bulk resource information */
 int res_read_blk(res_blk_t *res, int pid, int flags)
 {
-	int ismeminforeq = 0;
-	int isnetdevreq = 0;
+	bool ismeminforeq = 0;
+	bool isnetdevreq = 0;
+	bool isprocreq = 0;
 	struct utsname t;
 	int ret;
 	char *out;
@@ -281,12 +300,16 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 		case RES_NET_ALLIFSTAT:
 			isnetdevreq = 1;
 			break;
+		case RES_PROC_INFOALL:
+			isprocreq = 1;
 
 		default:
 			res->res_unit[i]->status = RES_STATUS_NOTSUPPORTED;
 		}
 	}
 
+	if (isprocreq)
+		populate_procinfo(res, pid, flags);
 	if (ismeminforeq)
 		populate_meminfo(res, pid, flags);
 

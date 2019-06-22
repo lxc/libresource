@@ -23,6 +23,7 @@
 #define	_RESOURCE_H
 
 #include <net/if.h>
+#include <stdint.h>
 
 /* libresource version */
 #define LIBRESOURCE_API_VERSION (1.0.0)
@@ -50,6 +51,9 @@
  * returned.
  */
 #define RES_UNIT_OUT_SIZE	256
+
+/* Size of user name length */
+#define RES_USR_NAME_SZ		32
 
 /* This union is used to return resource information of various types */
 union r_data {
@@ -111,6 +115,10 @@ typedef struct res_blk {
 #define RES_KERN_RELEASE		3074
 #define KERN_MAX			3075
 
+#define PROC_MIN			4096
+#define RES_PROC_INFOALL		4097
+#define PROC_MAX			4098
+
 /* Structure to return RES_MEM_INFOALL resource information */
 typedef struct res_mem_infoall {
 	size_t memfree;
@@ -125,23 +133,72 @@ typedef struct res_mem_infoall {
 /* Structure to return RES_MEM_ALLIFSTAT resource information */
 typedef struct res_net_ifstat {
 	char ifname[IFNAMSIZ];
-	unsigned long long rx_bytes;
-	unsigned long long rx_packets;
-	unsigned long rx_errors;
-	unsigned long rx_dropped;
-	unsigned long rx_fifo_err;
-	unsigned long rx_frame_err;
-	unsigned long rx_compressed;
-	unsigned long rx_multicast;
-	unsigned long long tx_bytes;
-	unsigned long long tx_packets;
-	unsigned long tx_errors;
-	unsigned long tx_dropped;
-	unsigned long tx_fifo_err;
-	unsigned long tx_collisions;
-	unsigned long tx_carrier_err;
-	unsigned long tx_compressed;
+	uint64_t rx_bytes;
+	uint64_t rx_packets;
+	uint64_t rx_errors;
+	uint64_t rx_dropped;
+	uint64_t rx_fifo_err;
+	uint64_t rx_frame_err;
+	uint64_t rx_compressed;
+	uint64_t rx_multicast;
+	uint64_t tx_bytes;
+	uint64_t tx_packets;
+	uint64_t tx_errors;
+	uint64_t tx_dropped;
+	uint64_t tx_fifo_err;
+	uint64_t tx_collisions;
+	uint64_t tx_carrier_err;
+	uint64_t tx_compressed;
 } res_net_ifstat_t;
+
+typedef struct proc_info {
+	int pid;
+	char cmd[16];
+	char state;
+	int ppid;
+	int pgrp;
+	int session;
+	int tty;
+	int tpgid;
+	uint64_t flags;
+	uint64_t min_flt;
+	uint64_t cmin_flt;
+	uint64_t maj_flt;
+	uint64_t cmaj_flt;
+	uint64_t utime;
+	uint64_t stime;
+	uint64_t cutime;
+	uint64_t cstime;
+	uint64_t start_time;
+	long priority;
+	long nice;
+	int nlwp;
+	long alarm;
+	uint64_t vsize;
+	long rss;
+	uint64_t rss_rlim;
+	uint64_t start_code;
+	uint64_t end_code;
+	uint64_t start_stack;
+	uint64_t kstk_esp;
+	uint64_t kstk_eip;
+	uint64_t wchan;
+	int exit_signal;
+	int processor;
+	uint64_t rtprio;
+	uint64_t policy;
+	int euid;
+	char euser[RES_USR_NAME_SZ];
+
+	/* Information from /prco/[pid]/statm */
+	uint64_t size;
+	uint64_t resident;
+	uint64_t share;
+	uint64_t text;
+	uint64_t lib;
+	uint64_t data;
+	uint64_t dt;
+} res_proc_infoall_t;
 
 /* Allocating memory and building a res_blk structure to return bulk
  * resource information.
