@@ -77,7 +77,7 @@ static inline int scan_net_stat(char *buf, res_net_ifstat_t *i, int ver)
 	switch (ver) {
 	case 3:
 		sscanf(buf,
-			"%llu %llu %lu %lu %lu %lu %lu %lu %llu %llu %lu %lu %lu %lu %lu %lu",
+			"%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 			&i->rx_bytes,
 			&i->rx_packets,
 			&i->rx_errors,
@@ -98,7 +98,7 @@ static inline int scan_net_stat(char *buf, res_net_ifstat_t *i, int ver)
 		break;
 	case 2:
 		sscanf(buf,
-			"%llu %llu %lu %lu %lu %lu %llu %llu %lu %lu %lu %lu %lu",
+			"%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 			&i->rx_bytes,
 			&i->rx_packets,
 			&i->rx_errors,
@@ -117,7 +117,7 @@ static inline int scan_net_stat(char *buf, res_net_ifstat_t *i, int ver)
 		break;
 	case 1:
 		sscanf(buf,
-			"%llu %lu %lu %lu %lu %llu %lu %lu %lu %lu %lu",
+			"%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 			&i->rx_packets,
 			&i->rx_errors,
 			&i->rx_dropped,
