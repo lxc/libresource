@@ -3,6 +3,26 @@ library of interfaces through which we can get system resource information
 like memory, CPU, stat, networking, device etc.
 Currently most of such information is read from /proc and /sys.
 
+## Compile
+To compile: 
+make all
+This will build libresource.so.0.1.1
+Set up symlinks:
+ln -s ./libresource.so.0.1.1 ./libresource.so
+ln -s ./libresource.so.0.1.1 ./libresource.so.0
+
+Compile a test program as follows:
+cc -I $LD_LIBRARY_PATH -std=gnu99 -o test  test.c -L $LD_LIBRARY_PATH -lresource
+
+where, $LD_LIBRARY_PATH is the location of your top level libresource code.
+
+To run, set LD_LIBRARY_PATH:
+export LD_LIBRARY_PATH=<libresource-directory>
+eg. LD_LIBRARY_PATH=/home/user/libresource
+
+Then run your test program:
+./test
+
 ## Use case:
 
 **1: Ease of use -**

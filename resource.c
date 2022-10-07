@@ -164,11 +164,6 @@ void res_destroy_blk(res_blk_t *res)
  */
 int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags)
 {
-	struct utsname t;
-	int ret;
-	int err;
-	char *rawdata;
-
 	if (out == NULL) {
 		switch (res_id) {
 		/* In case of RES_NET_ALLIFSTAT memory is allocated on the
@@ -196,37 +191,6 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 	if (res_id >= NET_MIN && res_id < NET_MAX)
 		return getnetinfo(res_id, out, out_sz, hint, pid, flags);
 
-	switch (res_id) {
-	case RES_KERN_RELEASE:
-		ret = uname(&t);
-		if (ret == -1) {
-			err = errno;
-			eprintf("Error in reading kernel release");
-			errno = err;
-			return -1;
-		}
-		strncpy(out, t.release, out_sz-1);
-		((char *)out)[out_sz-1] = '\0';
-		break;
-
-	case RES_KERN_COMPILE_TIME:
-		ret = uname(&t);
-		if (ret == -1) {
-			err = errno;
-			eprintf("Error in reading version (for compile time)");
-			errno = err;
-			return -1;
-		}
-		rawdata = skip_spaces(t.version, strlen(t.version), 3);
-		strncpy(out, rawdata, out_sz-1);
-		((char *)out)[out_sz-1] = '\0';
-		break;
-
-	default:
-		eprintf("Resource Id is invalid");
-		errno = EINVAL;
-		return -1;
-	}
 	return 0;
 }
 
