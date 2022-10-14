@@ -88,6 +88,8 @@ typedef struct res_blk {
  * Memory related			(RES_MEM_*)		1024-
  * Network related			(RES_NET_*)		2048-
  * General kernel related		(RES_KERN_*)		3072-
+ * Kernel related or get resource 
+ * from kernel directly(skip /proc)     (RES_KERN_*)            3072-
  * This is done to facilitate any future optimization which can be made
  * on the basis of resource information (hashing etc ?)
  */
@@ -113,7 +115,8 @@ typedef struct res_blk {
 #define KERN_MIN			3072
 #define RES_KERN_COMPILE_TIME		3073
 #define RES_KERN_RELEASE		3074
-#define KERN_MAX			3075
+#define RES_KERN_PID_START_TIME         3075
+#define KERN_MAX                        3076 
 
 #define PROC_MIN			4096
 #define RES_PROC_INFOALL		4097
@@ -219,5 +222,24 @@ extern void res_destroy_blk(res_blk_t *resblk);
  * Also size of allocated memory should be passed in out_sz.
  */
 extern int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags);
+
+/* Read PID start time directly from kernel instead of /proc/$pid/stat
+ * This reads the start time from the task structure of the process
+ * directly from kernel, making it more efficient than going through /proc
+ * The field it reads is (from man page of /proc):
+ * (22) starttime  %llu
+                     The time the process started after system boot.  In
+                     kernels before Linux 2.6, this value was expressed
+                     in jiffies.  Since Linux 2.6, the value is
+                     expressed in clock ticks (divide by
+                     sysconf(_SC_CLK_TCK)).
+ * Input is a pointer to an array of integers containing the PIDs (int *pidarr)
+ * Output is a pointer to an array of unsigned long long (stimes)
+ * This should be allocated by the user as before calling res_read_kern as:
+ * stimes = (unsigned long long *)malloc(LEN*sizeof(unsigned long long));
+ * Appropriately, it should be freed by the caller after it's use
+ * len_sz is the length of in or out arrays (the no. of PIDs)
+ */
+extern int res_read_kern(int res_id, void *out, size_t out_sz, void* in);
 
 #endif /* RESOURCE_H */
