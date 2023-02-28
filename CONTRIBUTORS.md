@@ -10,6 +10,8 @@ I am upstream for lxc, lxd, lxcfs, and glibc.
 
 ## Rahul Yadav <rahul.x.yadav@oracle.com>
 
+## Anjali Kullkarni <anjali.k.kulkarni@oracle.com>
+
 # Followers
 
 People who are interested in using libresource (if it "happens") but do not
