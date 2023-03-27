@@ -6,10 +6,9 @@ Currently most of such information is read from /proc and /sys.
 ## Compile
 To compile: 
 make all
-This will build libresource.so.0.1.1
-Set up symlinks:
-ln -s ./libresource.so.0.1.1 ./libresource.so
-ln -s ./libresource.so.0.1.1 ./libresource.so.0
+
+Then install:
+make install
 
 Compile a test program as follows:
 cc -I $LD_LIBRARY_PATH -std=gnu99 -o test  test.c -L $LD_LIBRARY_PATH -lresource
