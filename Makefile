@@ -17,6 +17,10 @@ LIB = libresource.so.$(ABI)
 all: $(OBJ)
 	$(CC) -shared -Wl,-soname,libresource.so.$(ABI_MAJOR) -o $(LIB) $^ $(CFLAGS)
 
+install:
+	ln -s ./libresource.so.0.1.1 ./libresource.so 
+	ln -s ./libresource.so.0.1.1 ./libresource.so.0
+
 .PHONY : clean
 clean:
-	$(RM) $(LIB) $(OBJ) $(TEST)
+	$(RM) $(LIB) $(OBJ) $(TEST) *.so*
