@@ -16,8 +16,8 @@ LIB = libresource.so.$(ABI)
 
 all: $(OBJ)
 	$(CC) -shared -Wl,-soname,libresource.so.$(ABI_MAJOR) -o $(LIB) $^ $(CFLAGS)
-	ln -s ./libresource.so.0.1.1 ./libresource.so 
-	ln -s ./libresource.so.0.1.1 ./libresource.so.0
+	ln -s ./libresource.so.$(ABI) ./libresource.so 
+	ln -s ./libresource.so.$(ABI) ./libresource.so.${ABI_MAJOR}
 
 .PHONY : clean
 clean:
