@@ -46,6 +46,14 @@
 		(__iterator = __it);                                       \
 		__iterator = __it = strtok_r(NULL, __separators, &__p))
 
+#define CHECK_SIZE(sz, req_sz)                                          \
+        if (sz < req_sz) {                                              \
+                eprintf("memory (%ld) is not enough to hold data (%ld)",\
+                sz, req_sz);                                            \
+                errno = ENOMEM;                                         \
+                return -1;                                              \
+        }
+
 /* Helper function to skip first n spaces from string s and return
  * pointer to string after that. If len is reached before we get n spaces,
  * null is returned.
@@ -173,13 +181,10 @@ static inline int file_to_buf(char *fname, char *buf, unsigned int bufsz)
 	int err = 0;
 
 	fd = open(fname, O_RDONLY);
-	if (fd == -1)
-		return -1;
-
-	if (lseek(fd, 0L, SEEK_SET) == -1) {
+	if (fd == -1) {
 		err = errno;
-		eprintf("in lseek for File %s with errno: %d", fname, errno);
-		close(fd);
+		eprintf("Error opening File %s with errno: %d",
+			fname, errno);
 		errno = err;
 		return -1;
 	}
