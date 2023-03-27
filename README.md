@@ -7,9 +7,6 @@ Currently most of such information is read from /proc and /sys.
 To compile: 
 make all
 
-Then install:
-make install
-
 Compile a test program as follows:
 cc -I $LD_LIBRARY_PATH -std=gnu99 -o test  test.c -L $LD_LIBRARY_PATH -lresource
 
