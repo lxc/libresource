@@ -30,6 +30,7 @@
 #include "resmem.h"
 #include "resnet.h"
 #include "resproc.h"
+#include "resvm.h"
 
 /* Allocate memory for bulk resource information and initiate it
  * properly.
@@ -162,7 +163,7 @@ void res_destroy_blk(res_blk_t *res)
 /* read resource information corresponding to res_id, out should have been
  * properly allocated by caller if required.
  */
-int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags)
+int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int flags)
 {
 	if (out == NULL) {
 		switch (res_id) {
@@ -191,6 +192,16 @@ int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flag
 	if (res_id >= NET_MIN && res_id < NET_MAX)
 		return getnetinfo(res_id, out, out_sz, hint, pid, flags);
 
+	if (res_id >= VM_MIN && res_id < VM_MAX)
+		return getvmstatinfo(res_id, out, out_sz, hint, flags);
+
+	return 0;
+}
+
+int res_exist(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags)
+{
+	if (res_id >= VM_MIN && res_id < VM_MAX)
+		return getvmexist(res_id, out, out_sz, hint, flags);
 	return 0;
 }
 

@@ -121,6 +121,14 @@ typedef struct res_blk {
 #define RES_PROC_INFOALL		4097
 #define PROC_MAX			4098
 
+#define VM_MIN				5000
+#define RES_VMSTAT_INFO			5001
+#define RES_VMSTAT_PGPGIN		5002
+#define RES_VMSTAT_PGPGOUT		5003
+#define RES_VMSTAT_SWAPIN		5004
+#define RES_VMSTAT_SWAPOUT		5005
+#define VM_MAX				5006
+
 /* Structure to return RES_MEM_INFOALL resource information */
 typedef struct res_mem_infoall {
 	size_t memfree;
@@ -202,6 +210,187 @@ typedef struct proc_info {
 	uint64_t dt;
 } res_proc_infoall_t;
 
+struct vmstat {
+	unsigned long nr_free_pages;
+	unsigned long nr_zone_inactive_anon;
+	unsigned long nr_zone_active_anon;
+	unsigned long nr_zone_inactive_file;
+	unsigned long nr_zone_active_file;
+	unsigned long nr_zone_unevictable;
+	unsigned long nr_zone_write_pending;
+	unsigned long nr_mlock;
+	unsigned long nr_bounce;
+	unsigned long nr_zspages;
+	unsigned long nr_free_cma;
+	unsigned long numa_hit;
+	unsigned long numa_miss;
+	unsigned long numa_foreign;
+	unsigned long numa_interleave;
+	unsigned long numa_local;
+	unsigned long numa_other;
+	unsigned long nr_inactive_anon;
+	unsigned long nr_active_anon;
+	unsigned long nr_inactive_file;
+	unsigned long nr_active_file;
+	unsigned long nr_unevictable;
+	unsigned long nr_slab_reclaimable;
+	unsigned long nr_slab_unreclaimable;
+	unsigned long nr_isolated_anon;
+	unsigned long nr_isolated_file;
+	unsigned long workingset_nodes;
+	unsigned long workingset_refault_anon;
+	unsigned long workingset_refault_file;
+	unsigned long workingset_activate_anon;
+	unsigned long workingset_activate_file;
+	unsigned long workingset_restore_anon;
+	unsigned long workingset_restore_file;
+	unsigned long workingset_nodereclaim;
+	unsigned long nr_anon_pages;
+	unsigned long nr_mapped;
+	unsigned long nr_file_pages;
+	unsigned long nr_dirty;
+	unsigned long nr_writeback;
+	unsigned long nr_writeback_temp;
+	unsigned long nr_shmem;
+	unsigned long nr_shmem_hugepages;
+	unsigned long nr_shmem_pmdmapped;
+	unsigned long nr_file_hugepages;
+	unsigned long nr_file_pmdmapped;
+	unsigned long nr_anon_transparent_hugepages;
+	unsigned long nr_vmscan_write;
+	unsigned long nr_vmscan_immediate_reclaim;
+	unsigned long nr_dirtied;
+	unsigned long nr_written;
+	unsigned long nr_throttled_written;
+	unsigned long nr_kernel_misc_reclaimable;
+	unsigned long nr_foll_pin_acquired;
+	unsigned long nr_foll_pin_released;
+	unsigned long nr_kernel_stack;
+	unsigned long nr_page_table_pages;
+	unsigned long nr_sec_page_table_pages;
+	unsigned long nr_swapcached;
+	unsigned long pgpromote_success;
+	unsigned long pgpromote_candidate;
+	unsigned long nr_dirty_threshold;
+	unsigned long nr_dirty_background_threshold;
+	unsigned long pgpgin;
+	unsigned long pgpgout;
+	unsigned long pswpin;
+	unsigned long pswpout;
+	unsigned long pgalloc_dma;
+	unsigned long pgalloc_dma32;
+	unsigned long pgalloc_normal;
+	unsigned long pgalloc_movable;
+	unsigned long pgalloc_device;
+	unsigned long allocstall_dma;
+	unsigned long allocstall_dma32;
+	unsigned long allocstall_normal;
+	unsigned long allocstall_movable;
+	unsigned long allocstall_device;
+	unsigned long pgskip_dma;
+	unsigned long pgskip_dma32;
+	unsigned long pgskip_normal;
+	unsigned long pgskip_movable;
+	unsigned long pgskip_device;
+	unsigned long pgfree;
+	unsigned long pgactivate;
+	unsigned long pgdeactivate;
+	unsigned long pglazyfree;
+	unsigned long pgfault;
+	unsigned long pgmajfault;
+	unsigned long pglazyfreed;
+	unsigned long pgrefill;
+	unsigned long pgreuse;
+	unsigned long pgsteal_kswapd;
+	unsigned long pgsteal_direct;
+	unsigned long pgsteal_khugepaged;
+	unsigned long pgdemote_kswapd;
+	unsigned long pgdemote_direct;
+	unsigned long pgdemote_khugepaged;
+	unsigned long pgscan_kswapd;
+	unsigned long pgscan_direct;
+	unsigned long pgscan_khugepaged;
+	unsigned long pgscan_direct_throttle;
+	unsigned long pgscan_anon;
+	unsigned long pgscan_file;
+	unsigned long pgsteal_anon;
+	unsigned long pgsteal_file;
+	unsigned long zone_reclaim_failed;
+	unsigned long pginodesteal;
+	unsigned long slabs_scanned;
+	unsigned long kswapd_inodesteal;
+	unsigned long kswapd_low_wmark_hit_quickly;
+	unsigned long kswapd_high_wmark_hit_quickly;
+	unsigned long pageoutrun;
+	unsigned long pgrotated;
+	unsigned long drop_pagecache;
+	unsigned long drop_slab;
+	unsigned long oom_kill;
+	unsigned long numa_pte_updates;
+	unsigned long numa_huge_pte_updates;
+	unsigned long numa_hint_faults;
+	unsigned long numa_hint_faults_local;
+	unsigned long numa_pages_migrated;
+	unsigned long pgmigrate_success;
+	unsigned long pgmigrate_fail;
+	unsigned long thp_migration_success;
+	unsigned long thp_migration_fail;
+	unsigned long thp_migration_split;
+	unsigned long compact_migrate_scanned;
+	unsigned long compact_free_scanned;
+	unsigned long compact_isolated;
+	unsigned long compact_stall;
+	unsigned long compact_fail;
+	unsigned long compact_success;
+	unsigned long compact_daemon_wake;
+	unsigned long compact_daemon_migrate_scanned;
+	unsigned long compact_daemon_free_scanned;
+	unsigned long htlb_buddy_alloc_success;
+	unsigned long htlb_buddy_alloc_fail;
+	unsigned long cma_alloc_success;
+	unsigned long cma_alloc_fail;
+	unsigned long unevictable_pgs_culled;
+	unsigned long unevictable_pgs_scanned;
+	unsigned long unevictable_pgs_rescued;
+	unsigned long unevictable_pgs_mlocked;
+	unsigned long unevictable_pgs_munlocked;
+	unsigned long unevictable_pgs_cleared;
+	unsigned long unevictable_pgs_stranded;
+	unsigned long thp_fault_alloc;
+	unsigned long thp_fault_fallback;
+	unsigned long thp_fault_fallback_charge;
+	unsigned long thp_collapse_alloc;
+	unsigned long thp_collapse_alloc_failed;
+	unsigned long thp_file_alloc;
+	unsigned long thp_file_fallback;
+	unsigned long thp_file_fallback_charge;
+	unsigned long thp_file_mapped;
+	unsigned long thp_split_page;
+	unsigned long thp_split_page_failed;
+	unsigned long thp_deferred_split_page;
+	unsigned long thp_split_pmd;
+	unsigned long thp_scan_exceed_none_pte;
+	unsigned long thp_scan_exceed_swap_pte;
+	unsigned long thp_scan_exceed_share_pte;
+	unsigned long thp_split_pud;
+	unsigned long thp_zero_page_alloc;
+	unsigned long thp_zero_page_alloc_failed;
+	unsigned long thp_swpout;
+	unsigned long thp_swpout_fallback;
+	unsigned long balloon_inflate;
+	unsigned long balloon_deflate;
+	unsigned long balloon_migrate;
+	unsigned long swap_ra;
+	unsigned long swap_ra_hit;
+	unsigned long ksm_swpin_copy;
+	unsigned long cow_ksm;
+	unsigned long zswpin;
+	unsigned long zswpout;
+	unsigned long direct_map_level2_splits;
+	unsigned long direct_map_level3_splits;
+	unsigned long nr_unstable;
+};
+
 /* Allocating memory and building a res_blk structure to return bulk
  * resource information.
  */
@@ -220,7 +409,8 @@ extern void res_destroy_blk(res_blk_t *resblk);
 /* Read a resource information. Memory for out should be properly allocated.
  * Also size of allocated memory should be passed in out_sz.
  */
-extern int res_read(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags);
+extern int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int flags);
+extern int res_exist(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags);
 
 extern int res_read_kern(int res_id, void *out, size_t out_sz, void* in);
 
