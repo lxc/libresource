@@ -215,31 +215,156 @@ static int getmeminfoall(char *cg, void *out)
 	return 0;
 }
 
-/* Read resource information corresponding to res_id */
-int getmeminfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
+struct mem_table {
+        char *mem_name;
+        unsigned long *mem_value;
+};
+
+static int compare_mem_table_entry(const void *entry1, const void *entry2)
 {
-	char buf[MEMBUF_128];
-	FILE *fp;
-	int err = 0;
+	return strcmp(((struct mem_table*)entry1)->mem_name,((struct mem_table*)entry2)->mem_name);
+}
+
+int populate_minfo(char *buffer, void *out, int ex)
+{
+	char *end, *start;
+        char search_name[32];
+        struct mem_table search_entry = {search_name, NULL};
+        struct mem_table *result;
+        int mem_table_count;
+        struct memstat mem;
+
+	struct mem_table mem_table_array[] = {
+		{"MemTotal:", &mem.memtotal},
+		{"MemFree:", &mem.memfree},
+		{"MemAvailable:", &mem.memavailable},
+		{"Buffers:", &mem.buffers},
+		{"Cached:", &mem.cached},
+		{"SwapCached:", &mem.swapcached},
+		{"Active:", &mem.active},
+		{"Inactive:", &mem.inactive},
+		{"Active(anon):", &mem.active_anon},
+		{"Inactive(anon):", &mem.inactive_anon},
+		{"Active(file):", &mem.active_file},
+		{"Inactive(file):", &mem.inactive_file},
+		{"Unevictable:", &mem.unevictable},
+		{"Mlocked:", &mem.mlocked},
+		{"SwapTotal:", &mem.swaptotal},
+		{"SwapFree:", &mem.swapfree},
+		{"Zswap:", &mem.zswap},
+		{"Zswapped:", &mem.zswapped},
+		{"Dirty:", &mem.dirty},
+		{"Writeback:", &mem.writeback},
+		{"AnonPages:", &mem.anonpages},
+		{"Mapped:", &mem.mapped},
+		{"Shmem:", &mem.shmem},
+		{"KReclaimable:", &mem.kreclaimable},
+		{"Slab:", &mem.slab},
+		{"SReclaimable:", &mem.sreclaimable},
+		{"SUnreclaim:", &mem.sunreclaim},
+		{"KernelStack:", &mem.kernelstack},
+		{"PageTables:", &mem.pagetables},
+		{"SecPageTables:", &mem.secpagetables},
+		{"NFS_Unstable:", &mem.nfs_unstable},
+		{"Bounce:", &mem.bounce},
+		{"WritebackTmp:", &mem.writebacktmp},
+		{"CommitLimit:", &mem.commitlimit},
+		{"Committed_AS:", &mem.committed_as},
+		{"VmallocTotal:", &mem.vmalloc_total},
+		{"VmallocUsed:", &mem.vmalloc_used},
+		{"VmallocChunk:", &mem.vmalloc_chunk},
+		{"Percpu:", &mem.percpu},
+		{"HardwareCorrupted:", &mem.hardware_corrupted},
+		{"AnonHugePages:", &mem.anon_hugepages},
+		{"ShmemHugePages:", &mem.shmem_hugepages},
+		{"ShmemPmdMapped:", &mem.shmem_pmd_mapped},
+		{"FileHugePages:", &mem.file_hugepages},
+		{"FilePmdMapped:", &mem.file_pmd_mapped},
+		{"CmaTotal:", &mem.cma_total},
+		{"CmaFree:", &mem.cma_free},
+		{"HugePages_Total:", &mem.hugepages_total},
+		{"HugePages_Free:", &mem.hugepages_free},
+		{"HugePages_Rsvd:", &mem.hugepages_rsvd},
+		{"HugePages_Surp:", &mem.hugepages_surp},
+		{"Hugepagesize:", &mem.hugepages_size},
+		{"Hugetlb:", &mem.hugetlb},
+		{"DirectMap4k:", &mem.directmap_4k},
+		{"DirectMap2M:", &mem.directmap_2M},
+		{"DirectMap1G:", &mem.directmap_1G},
+	};
+
+	memset(&mem, 0, sizeof(mem));
+
+	mem_table_count = sizeof(mem_table_array)/sizeof(struct mem_table);
+	qsort(mem_table_array, mem_table_count, sizeof(struct mem_table),
+	      compare_mem_table_entry);
+        //for (int i = 0; i < mem_table_count; i++)
+        //      printf("%d: %s\n", i, mem_table_array[i]);
+	start = buffer;
+	while(1) {
+		end = strchr(start, ' ');
+		if (!end)
+			break;
+		end[0] = '\0';
+		strcpy(search_entry.mem_name, start);
+		result = bsearch(&search_entry, mem_table_array,
+				 mem_table_count,
+				 sizeof(struct mem_table),
+				 compare_mem_table_entry);
+		if (result) {
+			end++;
+			while (end && *end == ' ')
+				end++;
+			if (!end)
+				break;
+			if (*end == '\n')
+				goto nextline;
+			if (ex)
+				*(result->mem_value) = 1;
+			else
+				*(result->mem_value) = strtoul(end, NULL, 10);
+			//printf("Found %s value %lu\n",search_entry.mem_name, *(result->mem_value));
+		} else {
+			printf("Entry %s not found\n",search_entry.mem_name);
+		}
+nextline:
+		start = strchr(end, '\n');
+		if (!start)
+			break;
+		start++;
+	}
+	memcpy(out, &mem, sizeof(mem));
+	return 0;
+}
+
+int getmemexist(int res_id, void *exist, size_t sz, void *hint, int flags)
+{
+	int ret;
+	char buf[4096];
+
+	ret = file_to_buf("./mem_info.orig", buf, sizeof(buf));
+	if (ret == -1)
+		return -1;
+	ret = populate_minfo(buf, exist, 1);
+	return ret;
+}
+
+/* Read resource information corresponding to res_id */
+int getmeminfo(int res_id, void *out, size_t sz, void **hint, int pid, int flags)
+{
+	char buf[4096];
+	//FILE *fp;
+	//int err = 0;
 	size_t active_anon, active_file, inactive_anon, inactive_file, cache,
 		swaptotal, swapfree, swtot, swusage, mmusage, mmtot, memtotal;
 	int ret = 0;
-	res_mem_infoall_t *mminfo;
+	//res_mem_infoall_t *mminfo;
 
 	char *cg = get_cgroup(pid, MEMCGNAME);
 
 	if (cg) {
 		clean_init(cg);
 	}
-
-#define CHECK_SIZE(sz, req_sz)						\
-	if (sz < req_sz) {						\
-		eprintf("memory (%ld) is not enough to hold data (%ld)",\
-		sz, req_sz);						\
-		errno = ENOMEM;						\
-		return -1;						\
-	}
-
 
 	switch (res_id) {
 		/* if process is part of a cgroup then return memory info
@@ -378,36 +503,14 @@ int getmeminfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 			break;
 		}
 
-		fp = fopen(MEMINFO_FILE, "r");
-		if (fp == NULL) {
-			err = errno;
-			eprintf("while opening File %s with errno: %d",
-				MEMINFO_FILE, errno);
-			errno = err;
+#ifdef TESTING
+		ret = file_to_buf("./mem_info1.orig", buf, sizeof(buf));
+#else
+		ret = file_to_buf(MEMINFO_FILE, buf, sizeof(buf));
+#endif
+		if (ret == -1)
 			return -1;
-		}
-		mminfo = (res_mem_infoall_t *)out;
-		/* Read through file and populate all information which
-		 * is required.
-		 */
-		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			if (startswith("MemTotal:", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->memtotal);
-			} else if (startswith("MemFree:", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->memfree);
-			} else if (startswith("MemAvailable:", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->memavailable);
-			} else if (startswith("Active", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->active);
-			} else if (startswith("Inactive", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->inactive);
-			} else if (startswith("SwapTotal", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->swaptotal);
-			} else if (startswith("SwapFree", buf)) {
-				sscanf(buf, "%*s%zu", &mminfo->swapfree);
-			}
-		}
-		fclose(fp);
+		ret = populate_minfo(buf, out, 0);
 		break;
 
 	case RES_MEM_PAGESIZE:
@@ -424,7 +527,7 @@ int getmeminfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 
 #undef CHECK_SIZE
 
-	return 0;
+	return ret;
 }
 
 int populate_meminfo(res_blk_t *res, int pid, int flags)

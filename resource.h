@@ -140,6 +140,65 @@ typedef struct res_mem_infoall {
 	size_t swapfree;
 } res_mem_infoall_t;
 
+struct memstat {
+	unsigned long memtotal;
+	unsigned long memfree;
+	unsigned long memavailable;
+	unsigned long buffers;
+	unsigned long cached;
+	unsigned long swapcached;
+	unsigned long active;
+	unsigned long inactive;
+	unsigned long active_anon;
+	unsigned long inactive_anon;
+	unsigned long active_file;
+	unsigned long inactive_file;
+	unsigned long unevictable;
+	unsigned long mlocked;
+	unsigned long swaptotal;
+	unsigned long swapfree;
+	unsigned long zswap;
+	unsigned long zswapped;
+	unsigned long dirty;
+	unsigned long writeback;
+	unsigned long anonpages;
+	unsigned long mapped;
+	unsigned long shmem;
+	unsigned long kreclaimable;
+	unsigned long slab;
+	unsigned long sreclaimable;
+	unsigned long sunreclaim;
+	unsigned long kernelstack;
+	unsigned long pagetables;
+	unsigned long secpagetables;
+	unsigned long nfs_unstable;
+	unsigned long bounce;
+	unsigned long writebacktmp;
+	unsigned long commitlimit;
+	unsigned long committed_as;
+	unsigned long vmalloc_total;
+	unsigned long vmalloc_used;
+	unsigned long vmalloc_chunk;
+	unsigned long percpu;
+	unsigned long hardware_corrupted;
+	unsigned long anon_hugepages;
+	unsigned long shmem_hugepages;
+	unsigned long shmem_pmd_mapped;
+	unsigned long file_hugepages;
+	unsigned long file_pmd_mapped;
+	unsigned long cma_total;
+	unsigned long cma_free;
+	unsigned long hugepages_total;
+	unsigned long hugepages_free;
+	unsigned long hugepages_rsvd;
+	unsigned long hugepages_surp;
+	unsigned long hugepages_size;
+	unsigned long hugetlb;
+	unsigned long directmap_4k;
+	unsigned long directmap_2M;
+	unsigned long directmap_1G;
+};
+
 /* Structure to return RES_MEM_ALLIFSTAT resource information */
 typedef struct res_net_ifstat {
 	char ifname[IFNAMSIZ];

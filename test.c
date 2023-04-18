@@ -22,6 +22,15 @@
 #include <unistd.h>
 #include <resource.h>
 
+void print_meminfo()
+{
+        struct memstat mem;
+
+        res_read(RES_MEM_INFOALL, &mem, sizeof(mem), NULL, 0, 0);
+        printf("MemTotal: %lu kB\n", mem.memtotal);
+        printf("\n");
+}
+
 void print_vmstat()
 {
         struct vmstat data;
@@ -48,4 +57,6 @@ int main(int argc, char **argv)
 	/* VMSTAT */
 	print_vmstat();
 
+	/* MEMINFO */
+	print_meminfo();
 }
