@@ -198,13 +198,6 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 	return 0;
 }
 
-int res_exist(int res_id, void *out, size_t out_sz, void *hint, int pid, int flags)
-{
-	if (res_id >= VM_MIN && res_id < VM_MAX)
-		return getvmexist(res_id, out, out_sz, hint, flags);
-	return 0;
-}
-
 /* Read bulk resource information */
 int res_read_blk(res_blk_t *res, int pid, int flags)
 {

@@ -337,18 +337,6 @@ nextline:
 	return 0;
 }
 
-int getmemexist(int res_id, void *exist, size_t sz, void *hint, int flags)
-{
-	int ret;
-	char buf[4096];
-
-	ret = file_to_buf("./mem_info.orig", buf, sizeof(buf));
-	if (ret == -1)
-		return -1;
-	ret = populate_minfo(buf, exist, 1);
-	return ret;
-}
-
 /* Read resource information corresponding to res_id */
 int getmeminfo(int res_id, void *out, size_t sz, void **hint, int pid, int flags)
 {
