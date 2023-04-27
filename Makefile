@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall -Werror -fPIC -std=gnu99
-DEPS = resource.h resource_impl.h resmem.h resnet.h resproc.h resvm.h
-OBJ = resource.o resmem.o resnet.o resproc.o reskern.o resvm.o
+DEPS = resource.h resource_impl.h resmem.h resnet.h resproc.h resvm.h rescpu.h
+OBJ = resource.o resmem.o resnet.o resproc.o reskern.o resvm.o rescpu.o
 TEST = test
 RM = rm -rf
 CP = cp
