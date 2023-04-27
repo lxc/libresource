@@ -129,6 +129,11 @@ typedef struct res_blk {
 #define RES_VMSTAT_SWAPOUT		5005
 #define VM_MAX				5006
 
+#define CPU_MIN				6000
+#define RES_CPU_INFO			6001
+#define RES_CPU_CORECOUNT		6002
+#define CPU_MAX 			6010
+
 /* Structure to return RES_MEM_INFOALL resource information */
 typedef struct res_mem_infoall {
 	size_t memfree;
@@ -139,6 +144,40 @@ typedef struct res_mem_infoall {
 	size_t swaptotal;
 	size_t swapfree;
 } res_mem_infoall_t;
+
+#define CPU_STR 100
+#define CPU_STR1 900
+#define CPU_STR2 400
+
+struct cpuinfo {
+	unsigned int processor;
+	char vendor_id[CPU_STR];
+	char cpu_family[CPU_STR];
+	char model[CPU_STR];
+	char model_name[CPU_STR];
+	char stepping[CPU_STR];
+	char microcode[CPU_STR];
+	char cpu_mhz[CPU_STR];
+	char cache_size[CPU_STR];
+	unsigned int physical_id;
+	unsigned int siblings;
+	unsigned int core_id;
+	unsigned int cpu_cores;
+	unsigned int apicid;
+	unsigned int initial_apicid;
+	char fpu[CPU_STR];
+	char fpu_exception[CPU_STR];
+	unsigned int cpu_id_level;
+	char wp[CPU_STR];
+	char flags[CPU_STR1];
+	char vmx_flags[CPU_STR1];
+	char bugs[CPU_STR2];
+	float bogomips;
+	unsigned int clflush_size;
+	unsigned int cache_alignment;
+	char address_sizes[CPU_STR];
+	char power_mgmt[CPU_STR];
+};
 
 struct memstat {
 	unsigned long memtotal;

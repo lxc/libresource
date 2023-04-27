@@ -52,6 +52,25 @@ void print_vmstat()
 	printf("\n");
 }
 
+void print_cpuinfo()
+{
+	struct cpuinfo *cpu;
+        int cpu_num, i;
+
+        cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
+        cpu = (struct cpuinfo *) malloc(cpu_num*sizeof(struct cpuinfo));
+
+        res_read(RES_CPU_INFO, cpu, (cpu_num*sizeof(struct cpuinfo)), NULL, 0, 0);
+        for (i = 0; i < cpu_num; i++) {
+                printf("processor\t: %u\n",cpu->processor);
+                printf("vendor_id\t: %s\n",cpu->vendor_id);
+		/* Keep accessing other fields in cpu-> */
+		cpu++;
+		printf("\n");
+	}
+	printf("\n");
+}
+
 int main(int argc, char **argv)
 {
 	/* VMSTAT */
@@ -59,4 +78,7 @@ int main(int argc, char **argv)
 
 	/* MEMINFO */
 	print_meminfo();
+
+	/* CPUINFO */
+	print_cpuinfo();
 }

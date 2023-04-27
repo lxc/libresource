@@ -31,6 +31,7 @@
 #include "resnet.h"
 #include "resproc.h"
 #include "resvm.h"
+#include "rescpu.h"
 
 /* Allocate memory for bulk resource information and initiate it
  * properly.
@@ -195,6 +196,8 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 	if (res_id >= VM_MIN && res_id < VM_MAX)
 		return getvmstatinfo(res_id, out, out_sz, hint, flags);
 
+	if (res_id >= CPU_MIN && res_id < CPU_MAX)
+		return getcpuinfo(res_id, out, out_sz, hint, flags);
 	return 0;
 }
 
