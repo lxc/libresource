@@ -134,6 +134,13 @@ typedef struct res_blk {
 #define RES_CPU_CORECOUNT		6002
 #define CPU_MAX 			6010
 
+#define FS_MIN                          8000
+#define FS_AIONR                        8001
+#define FS_AIOMAXNR                     8002
+#define FS_FILENR                       8003
+#define FS_FILEMAXNR                    8004
+#define FS_MAX                          8010
+
 /* Structure to return RES_MEM_INFOALL resource information */
 typedef struct res_mem_infoall {
 	size_t memfree;

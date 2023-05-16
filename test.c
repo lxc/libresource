@@ -52,6 +52,21 @@ void print_vmstat()
 	printf("\n");
 }
 
+void print_fs()
+{
+        unsigned long long fs_value, val[3];
+
+        res_read(FS_AIONR, &fs_value, sizeof(fs_value), NULL, 0, 0);
+        printf("FS_AIONR : %Lu\n",fs_value);
+        res_read(FS_AIOMAXNR, &fs_value, sizeof(fs_value), NULL, 0, 0);
+        printf("FS_AIOMAXNR : %Lu\n",fs_value);
+        res_read(FS_FILENR, &val, sizeof(val), NULL, 0, 0);
+        printf("FS_FILENR : %Lu %Lu %Lu\n",val[0], val[1], val[2]);
+        res_read(FS_FILEMAXNR, &fs_value, sizeof(fs_value), NULL, 0, 0);
+        printf("FS_FILEMAXNR : %Lu\n",fs_value);
+        printf("\n");
+}
+
 void print_cpuinfo()
 {
 	struct cpuinfo *cpu;
@@ -81,4 +96,7 @@ int main(int argc, char **argv)
 
 	/* CPUINFO */
 	print_cpuinfo();
+
+	/* FS */
+	print_fs();
 }
