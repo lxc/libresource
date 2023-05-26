@@ -27,5 +27,6 @@
 extern int populate_netinfo(struct res_blk *res, int pid, int flags);
 extern int getnetinfo(int res_id, void *out, size_t sz, void *hint, int pid,
 		int flags);
+extern int getdevinfo(int res_id, void *out, size_t sz, void **hint, int flags);
 
 #endif /* _RESNET_H */
