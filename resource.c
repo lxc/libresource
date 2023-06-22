@@ -174,6 +174,8 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 		 * So out can be NULL in that case.
 		 */
 		case RES_NET_ALLIFSTAT:
+		case RES_NET_ROUTE_ALL:
+		case RES_NET_DEV_ALL:
 			break;
 
 		default:
@@ -199,6 +201,9 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 
 	if (res_id >= CPU_MIN && res_id < CPU_MAX)
 		return getcpuinfo(res_id, out, out_sz, hint, flags);
+
+	if (res_id >= ROUTE_MIN && res_id < ROUTE_MAX)
+		return getrouteinfo(res_id, out, out_sz, hint, flags);
 
 	if (res_id >= DEV_MIN && res_id < DEV_MAX)
 		return getdevinfo(res_id, out, out_sz, hint, flags);
