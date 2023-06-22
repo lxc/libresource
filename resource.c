@@ -200,8 +200,12 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 	if (res_id >= CPU_MIN && res_id < CPU_MAX)
 		return getcpuinfo(res_id, out, out_sz, hint, flags);
 
+	if (res_id >= DEV_MIN && res_id < DEV_MAX)
+		return getdevinfo(res_id, out, out_sz, hint, flags);
+
 	if (res_id >= FS_MIN && res_id < FS_MAX)
 		return getfsinfo(res_id, out, out_sz, hint, flags);
+
 	return 0;
 }
 

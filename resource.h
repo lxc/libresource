@@ -24,6 +24,7 @@
 
 #include <net/if.h>
 #include <stdint.h>
+#include <linux/if_link.h>
 
 /* libresource version */
 #define LIBRESOURCE_API_VERSION (1.0.0)
@@ -111,6 +112,10 @@ typedef struct res_blk {
 #define RES_NET_IFSTAT			2049
 #define RES_NET_ALLIFSTAT		2050
 #define NET_MAX				2051
+
+#define DEV_MIN                         2021
+#define RES_NET_DEV_ALL                 2022
+#define DEV_MAX                         2030
 
 #define KERN_MIN			3072
 #define RES_KERN_COMPILE_TIME		3073
@@ -243,6 +248,11 @@ struct memstat {
 	unsigned long directmap_4k;
 	unsigned long directmap_2M;
 	unsigned long directmap_1G;
+};
+
+struct ifstats {
+        char ifname[IFNAMSIZ];
+        struct rtnl_link_stats64 st64;
 };
 
 /* Structure to return RES_MEM_ALLIFSTAT resource information */
