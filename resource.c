@@ -174,6 +174,8 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 		 * So out can be NULL in that case.
 		 */
 		case RES_NET_ALLIFSTAT:
+		case RES_NET_ROUTE_ALL:
+		case RES_NET_DEV_ALL:
 			break;
 
 		default:
