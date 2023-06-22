@@ -113,6 +113,10 @@ typedef struct res_blk {
 #define RES_NET_ALLIFSTAT		2050
 #define NET_MAX				2051
 
+#define ROUTE_MIN                       2000
+#define RES_NET_ROUTE_ALL               2001
+#define ROUTE_MAX                       2010
+
 #define DEV_MIN                         2021
 #define RES_NET_DEV_ALL                 2022
 #define DEV_MAX                         2030
@@ -248,6 +252,24 @@ struct memstat {
 	unsigned long directmap_4k;
 	unsigned long directmap_2M;
 	unsigned long directmap_1G;
+};
+
+#define MAX_BYTES_IPV6  16
+#define MAX_BYTES_IPV4   4
+
+struct rt_info {
+	int table;
+	int family;
+	int index;
+	int protocol;
+	int scope;
+	char dest[MAX_BYTES_IPV6];
+	int dst_prefix_len;
+	char src[MAX_BYTES_IPV6];
+	int src_prefix_len;
+	char prefsrc[MAX_BYTES_IPV6];
+	char gate[MAX_BYTES_IPV6];
+	int metric;
 };
 
 struct ifstats {
