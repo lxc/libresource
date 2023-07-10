@@ -18,10 +18,6 @@
     
 static int count, ecount;
 
-//#define TESTING
-
-//#define PRINTLOGS
-
 static int connect_route()
 {
 	struct sockaddr_nl nl_saddr;
@@ -95,7 +91,9 @@ static int get_attr(struct rtattr *at[], struct rt_info *rt, struct rtmsg *m)
 	}
 	if (at[RTA_SRC]) {
 		if (m->rtm_family == AF_INET) {
+#ifdef PRINTLOGS
 			printf("RTA_SRC for AF_INET!!\n");
+#endif
 		}
 		if (m->rtm_family == AF_INET6) {
 			memcpy(rt->src, RTA_DATA(at[RTA_SRC]), MAX_BYTES_IPV6);
@@ -137,6 +135,9 @@ static int get_route_len(int net_sock)
 	struct iovec iov;
 	struct sockaddr_nl nladdr;
 
+	memset(&msg, 0, sizeof(msg));
+	memset(&iov, 0, sizeof(iov));
+
 	msg.msg_name = &nladdr;
 	msg.msg_namelen = sizeof(nladdr);
 	iov.iov_base = NULL;
@@ -152,7 +153,7 @@ static int get_route_len(int net_sock)
 		errno = err;
 		return -1;
 	}
-#ifdef PRINTLOGS1
+#ifdef PRINTLOGS
 	printf("received len %d\n",recvl);
 #endif
 	return recvl;
@@ -180,6 +181,7 @@ static int handle_route_resp(int net_sock, void **out)
 	struct rt_info *routes = NULL, *iroutes = NULL;
 	struct sockaddr_nl nladdr;
 
+	memset(&msg, 0, sizeof(msg));
 	msg.msg_name = &nladdr;
 	msg.msg_namelen = sizeof(nladdr);
 	msg.msg_iov = &iov;
@@ -198,6 +200,7 @@ static int handle_route_resp(int net_sock, void **out)
 				free(routes);
 			return -1;
 		}
+		memset(&iov, 0, sizeof(iov));
 		iov.iov_base = buf;
 		iov.iov_len = len;
 		max_routes = get_max_routes(len);
@@ -274,7 +277,9 @@ static int handle_route_resp(int net_sock, void **out)
 				iroutes++;
 				rtind++;
 			} else {
+#ifdef PRINTLOGS
 				printf("Family is %d\n",rt->rtm_family);
+#endif
 			}
 			r = NLMSG_NEXT(r, recvl);
 			count++;
