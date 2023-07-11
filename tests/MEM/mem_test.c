@@ -24,12 +24,21 @@
 
 int main(int argc, char **argv)
 {
-        struct memstat mem, exist;
+	struct memstat mem, exist;
 	unsigned long value;
 	FILE *fp;
+	int ret;
 
-	res_read(RES_MEM_INFOALL, &mem, sizeof(mem), NULL, 0, 0);
-	res_exist(RES_MEM_INFOALL, &exist, sizeof(exist), NULL, 0, 0);
+	ret = res_read(RES_MEM_INFOALL, &mem, sizeof(mem), NULL, 0, 0);
+	if (ret != 0) {
+		printf("res_read returned error %d\n",ret);
+		exit(1);
+	}
+	ret = res_exist(RES_MEM_INFOALL, &exist, sizeof(exist), NULL, 0, 0);
+	if (ret != 0) {
+		printf("res_exist returned error %d\n",ret);
+		exit(1);
+	}
 	fp = fopen ("./mem_info.txt", "w");
 
 	if (exist.memtotal)

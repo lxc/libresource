@@ -27,10 +27,24 @@ int main(int argc, char **argv)
         struct vmstat data, exist;
 	unsigned long value;
 	FILE *fp;
+	int ret;
 
-	res_read(RES_VMSTAT_INFO, &data, sizeof(data), NULL, 0, 0);
-	res_exist(RES_VMSTAT_INFO, &exist, sizeof(exist), NULL, 0, 0);
+	ret = res_read(RES_VMSTAT_INFO, &data, sizeof(data), NULL, 0, 0);
+	if (ret != 0) {
+		printf("res_read returned error %d\n",ret);
+		exit(1);
+	}
+	ret = res_exist(RES_VMSTAT_INFO, &exist, sizeof(exist), NULL, 0, 0);
+	if (ret != 0) {
+		printf("res_exist returned error %d\n",ret);
+		exit(1);
+	}
+
 	fp = fopen ("./vm_info.txt", "w");
+	if (fp == NULL) {
+		printf("fopen on ./vm_info.txt failed\n");
+		exit(1);
+	}
 
 	if (exist.nr_free_pages)
         	fprintf(fp, "nr_free_pages %lu\n", data.nr_free_pages);
