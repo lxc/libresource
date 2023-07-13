@@ -283,6 +283,16 @@ int populate_vminfo(void *out, int ex)
 	return 0;
 }
 
+int getvmexist(int res_id, void *exist, size_t sz, void *hint, int flags)
+{
+	int ret;
+	ret = file_to_buf("./vm_info.orig", buffer, sizeof(buffer));
+	if (ret == -1)
+		return -1;
+	ret = populate_vminfo(exist, 1);
+	return ret;
+}
+
 int getvmstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 {
 	int ret;
