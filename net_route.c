@@ -69,6 +69,73 @@ static int send_route_req(int net_sock)
 	return 0;
 }
 
+#ifdef TESTING
+#define IPA_F "%hhu.%hhu.%hhu.%hhu"
+#define IPA_V(str) str[0], str[1], str[2], str[3]
+
+static inline int is_zero(char *str, int len)
+{
+	for (int i = 0; i < len; i++)
+		if (str[i] != 0)
+			return 0;
+	return 1;
+}
+
+static inline const char *scope_str(int scope)
+{
+	switch (scope) {
+	case RT_SCOPE_UNIVERSE: return "universe";
+	case RT_SCOPE_SITE:     return "site";
+	case RT_SCOPE_LINK:     return "link";
+	case RT_SCOPE_HOST:     return "host";
+	case RT_SCOPE_NOWHERE:  return "nowhere";
+	default: 		return "invalid";
+	}
+}
+
+static inline const char *proto_str(int proto)
+{
+	switch (proto) {
+	case RTPROT_DHCP: 	return "dhcp";
+	case RTPROT_KERNEL: 	return "kernel";
+	case RTPROT_STATIC: 	return "static";
+	case RTPROT_BGP: 	return "bgp";
+	case RTPROT_ISIS: 	return "isis";
+	case RTPROT_OSPF: 	return "ospf";
+	case RTPROT_RIP: 	return "rip";
+	case RTPROT_EIGRP: 	return "eigrp";
+	default: 		return "other";
+	}
+}
+
+static void print_rt_info(struct rt_info *rt, FILE *fp)
+{
+        char ifname[IF_NAMESIZE];
+
+	if (rt->family == AF_INET) {
+		if (rt->dst_prefix_len == 0) {
+			fprintf(fp, "default");
+		} else {
+			fprintf(fp, IPA_F, IPA_V(rt->dest));
+			fprintf(fp, "/%02hhu", rt->dst_prefix_len);
+		}
+		if (!is_zero(rt->gate, MAX_BYTES_IPV4)) {
+			fprintf(fp, " via ");
+			fprintf(fp, IPA_F, IPA_V(rt->gate));
+		}
+		fprintf(fp, " dev %s", if_indextoname(rt->index, ifname));
+		fprintf(fp, " proto %s", proto_str(rt->protocol));
+		if (rt->scope != RT_SCOPE_UNIVERSE)
+			fprintf(fp, " scope %s", scope_str(rt->scope));
+		if (!is_zero(rt->prefsrc, MAX_BYTES_IPV4)) {
+			fprintf(fp, " src ");
+			fprintf(fp, IPA_F, IPA_V(rt->prefsrc));
+		}
+		fprintf(fp, " metric %d \n", rt->metric);
+	}
+}
+#endif
+
 static int get_attr(struct rtattr *at[], struct rt_info *rt, struct rtmsg *m)
 {
 	bzero(rt, sizeof(*rt));
@@ -180,6 +247,9 @@ static int handle_route_resp(int net_sock, void **out)
 	struct rtattr *at[RTA_MAX + 1];
 	struct rt_info *routes = NULL, *iroutes = NULL;
 	struct sockaddr_nl nladdr;
+#ifdef TESTING
+	FILE *fp = NULL;
+#endif
 
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name = &nladdr;
@@ -246,6 +316,10 @@ static int handle_route_resp(int net_sock, void **out)
 #endif
 				free(buf);
 				*(struct rt_info **)out = routes;
+#ifdef TESTING
+				if (fp)
+					fclose(fp);
+#endif
 				return rtind;
 			}
 			rt = (struct rtmsg *)NLMSG_DATA(r);
@@ -274,6 +348,10 @@ static int handle_route_resp(int net_sock, void **out)
 			parse_attr(at, RTM_RTA(rt), len);
 			if (rt->rtm_family == AF_INET || rt->rtm_family == AF_INET6) {
 				get_attr(at, iroutes, rt);
+#ifdef TESTING
+				fp = fopen ("./route_info.txt", "w");
+				print_rt_info(iroutes, fp);
+#endif
 				iroutes++;
 				rtind++;
 			} else {
@@ -290,6 +368,10 @@ static int handle_route_resp(int net_sock, void **out)
 #endif
 	}
 	*(struct rt_info **)out = routes;
+#ifdef TESTING
+	if (fp)
+		fclose(fp);
+#endif
 	return rtind;
 }
 
