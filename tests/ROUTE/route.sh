@@ -1,5 +1,5 @@
 # Enable -DTESTING in Makefile and the recompile library - make
-export LD_LIBRARY_PATH=/nvme/anjakulk/LIBRESOURCE/libresource
+export LD_LIBRARY_PATH=../..
 cd $LD_LIBRARY_PATH
 cd tests/ROUTE
 rm -f ./route_test
