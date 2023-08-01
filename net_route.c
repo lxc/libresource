@@ -14,6 +14,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 #include "resource_impl.h"
     
 static int count, ecount;
@@ -73,12 +74,12 @@ static int send_route_req(int net_sock)
 #define IPA_F "%hhu.%hhu.%hhu.%hhu"
 #define IPA_V(str) str[0], str[1], str[2], str[3]
 
-static inline int is_zero(char *str, int len)
+static inline bool is_zero(char *str, int len)
 {
 	for (int i = 0; i < len; i++)
 		if (str[i] != 0)
-			return 0;
-	return 1;
+			return false;
+	return true;
 }
 
 static inline const char *scope_str(int scope)

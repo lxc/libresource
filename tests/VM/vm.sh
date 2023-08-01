@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Enable -DTESTING in Makefile and the recompile library - make
-export LD_LIBRARY_PATH=../../
+export LD_LIBRARY_PATH=`git rev-parse --show-toplevel`
 cd $LD_LIBRARY_PATH
 cd tests/VM
 rm vm_test
