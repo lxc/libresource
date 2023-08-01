@@ -31,6 +31,10 @@ int main(int argc, char **argv)
 
 	cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
 	cpu = (struct cpuinfo *) malloc(cpu_num*sizeof(struct cpuinfo));
+	if (!cpu) {
+		printf("Out of memory, malloc for cpu returned NULL\n");
+		exit(1);
+	}
 
         ret = res_read(RES_CPU_INFO, cpu, (cpu_num*sizeof(struct cpuinfo)), NULL, 0, 0);
 	if (ret != 0) {
