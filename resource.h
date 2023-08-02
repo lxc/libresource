@@ -112,6 +112,11 @@ typedef struct res_blk {
 #define RES_NET_ROUTE_ALL               2001
 #define ROUTE_MAX                       2010
 
+#define ARP_MIN				2011
+#define RES_NET_ARP_ALL			2012
+#define RES_GET_ARP_SIZE		2013
+#define ARP_MAX				2020
+
 #define DEV_MIN                         2021
 #define RES_NET_DEV_ALL                 2022
 #define DEV_MAX                         2030
@@ -256,6 +261,13 @@ struct memstat {
 
 #define MAX_BYTES_IPV6  16
 #define MAX_BYTES_IPV4   4
+
+struct arp_info {
+	unsigned long arp_ip_addr_len;
+	char arp_ip_addr[MAX_BYTES_IPV6];
+	unsigned long arp_phys_addr_len;
+	char arp_phys_addr[6];
+};
 
 struct rt_info {
 	int table;
