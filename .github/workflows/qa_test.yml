@@ -1,0 +1,167 @@
+name: QA Test
+on:
+  - pull_request
+  - workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build 
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build with test flag
+      run: |
+        make TEST_FLAG=-DTESTING
+        ls
+    - run: |
+        mkdir artifacts
+    - uses: actions/upload-artifact@master
+      with:
+        name: build-artifacts
+        path: | 
+          *.so
+          *.so.*
+
+
+  cpu-test:
+    name: CPU Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run CPU tests
+      run: |
+        ./tests/CPU/cpu.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/CPU/cpu_info.orig
+              tests/CPU/cpu_info.txt
+
+  vm-test:
+    name: VM Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run VM tests
+      run: |
+        ./tests/VM/vm.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/VM/vm_info.orig
+              tests/VM/vm_info.txt
+
+  mem-test:
+    name: MEM Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run MEM tests
+      run: |
+        ./tests/MEM/mem.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/MEM/mem_info.orig
+              tests/MEM/mem_info.txt
+  
+  fs-test:
+    name: FS Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run FS tests
+      run: |
+        ./tests/FS/fs.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/FS/fs_info.orig
+              tests/FS/fs_info.txt
+
+  #route-test:
+  #  name: Route Test
+  #  runs-on: ubuntu-20.04
+  #  needs: build
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - uses: actions/download-artifact@master
+  #    with:
+  #      name: build-artifacts
+  #  - name: Run Route tests
+  #    run: |
+  #      ./tests/ROUTE/route.sh
+  #  - uses: actions/upload-artifact@master
+  #    if: failure()
+  #    with: 
+  #      name: run-artifacts
+  #      path: |
+  #            tests/ROUTE/route_info.orig
+  #            tests/ROUTE/route_info.txt
+
+  #arp-test:
+  #  name: ARP Test
+  #  runs-on: ubuntu-20.04
+  #  needs: build
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - uses: actions/download-artifact@master
+  #    with:
+  #      name: build-artifacts
+  #  - name: Run ARP tests
+  #    run: |
+  #      ./tests/ARP/arp.sh
+  #  - uses: actions/upload-artifact@master
+  #    if: failure()
+  #    with: 
+  #      name: run-artifacts
+  #      path: |
+  #           tests/ARP/arp_info.orig
+  #            tests/ARP/arp_info.txt 
+
+  stat-test:
+    name: STAT Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run STAT tests
+      run: |
+        ./tests/STAT/stat.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/STAT/stat_info.orig
+              tests/STAT/stat_info.txt  
