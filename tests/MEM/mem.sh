@@ -4,9 +4,11 @@
 export LD_LIBRARY_PATH=`git rev-parse --show-toplevel`
 cd $LD_LIBRARY_PATH
 cd tests/MEM
-rm mem_test
+rm -f mem_test
+rm -f mem_info.orig
+rm -f mem_info.txt
 cc -I $LD_LIBRARY_PATH -std=gnu99 -o mem_test mem_test.c -L $LD_LIBRARY_PATH -lresource
-cat /proc/meminfo > mem_info1.orig
+cat /proc/meminfo > mem_info.orig
 ./mem_test
-cat ./mem_info1.orig | sed 's/[ ]\+/ /g' > mem_info.orig
+sed -i 's/[ ]\+/ /g' mem_info.orig
 diff mem_info.orig mem_info.txt

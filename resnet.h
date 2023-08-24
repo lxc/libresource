@@ -20,6 +20,11 @@
 #define _RESNET_H
 
 #define NETDEV_FILE "/proc/net/dev"
+#define IP_PORT_RANGE "/proc/sys/net/ipv4/ip_local_port_range"
+#define TCP_RMEM_MAX "/proc/sys/net/ipv4/tcp_rmem"
+#define TCP_WMEM_MAX "/proc/sys/net/ipv4/tcp_wmem"
+#define CORE_RMEM_MAX "/proc/sys/net/core/rmem_max"
+#define CORE_WMEM_MAX "/proc/sys/net/core/wmem_max"
 
 #define NET_ALLIFSTAT_SZ    	1
 #define NETBUF_1024		1024
