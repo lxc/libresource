@@ -296,6 +296,8 @@ int getvmexist(int res_id, void *exist, size_t sz, void *hint, int flags)
 int getvmstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 {
 	int ret;
+	struct vmstat out1;
+	memset(&out1, 0, sizeof(out1));
 
 #ifdef TESTING
 	ret = file_to_buf("./vm_info.orig", buffer, sizeof(buffer));
@@ -325,6 +327,34 @@ int getvmstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 	case RES_VMSTAT_SWAPOUT:
 		CHECK_SIZE(sz, sizeof(unsigned long));
 		ret = find_vm_elem("pswpout", out);
+		break;
+	case RES_VMSTAT_PGALLOC:
+		CHECK_SIZE(sz, sizeof(unsigned long));
+		ret = populate_vminfo(&out1, 0);
+		*(unsigned long *)out = out1.pgalloc_dma +
+					out1.pgalloc_dma32 +
+					out1.pgalloc_normal +
+					out1.pgalloc_movable;
+		break;
+	case RES_VMSTAT_PGREFILL:
+		CHECK_SIZE(sz, sizeof(unsigned long));
+		ret = find_vm_elem("pgrefill", out);
+		break;
+	case RES_VMSTAT_PGSCAN:
+		CHECK_SIZE(sz, sizeof(unsigned long));
+		ret = populate_vminfo(&out1, 0);
+		*(unsigned long *)out = out1.pgscan_kswapd +
+					out1.pgscan_direct +
+					out1.pgscan_direct_throttle +
+					out1.pgscan_anon + out1.pgscan_file;
+		break;
+	case RES_VMSTAT_PGSTEAL:
+		CHECK_SIZE(sz, sizeof(unsigned long));
+		ret = populate_vminfo(&out1, 0);
+		*(unsigned long *)out = out1.pgsteal_kswapd +
+					out1.pgsteal_direct +
+					out1.pgsteal_anon +
+					out1.pgsteal_file;
 		break;
         default:
                 eprintf("Resource Id is invalid");

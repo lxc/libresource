@@ -403,13 +403,4 @@ int main(int argc, char **argv)
 	if (exist.nr_unstable)
 		fprintf(fp, "nr_unstable %lu\n", data.nr_unstable);
 	fclose(fp);
-
-	res_read(RES_VMSTAT_PGPGIN, &value, sizeof(value), NULL, 0, 0);
-	printf("RES_VMSTAT_PGPGIN: %lu\n",value);
-	res_read(RES_VMSTAT_PGPGOUT, &value, sizeof(value), NULL, 0, 0);
-	printf("RES_VMSTAT_PGPGOUT: %lu\n",value);
-	res_read(RES_VMSTAT_SWAPIN, &value, sizeof(value), NULL, 0, 0);
-	printf("RES_VMSTAT_SWAPIN: %lu\n",value);
-	res_read(RES_VMSTAT_SWAPOUT, &value, sizeof(value), NULL, 0, 0);
-	printf("RES_VMSTAT_SWAPOUT: %lu\n",value);
 }
