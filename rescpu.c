@@ -29,9 +29,7 @@
 #include <libgen.h>
 #include <ctype.h>
 
-//#define TESTING
-
-static int populate_cpuinfo(void *out, char *buffer, int total_len)
+static int populate_cpuinfo(void *out, char *buffer, int total_len, int probe)
 {
 	char *end, *start, *start2, *end2;
 	int bytes_done = 0;
@@ -74,60 +72,175 @@ static int populate_cpuinfo(void *out, char *buffer, int total_len)
 		if (start == end || start2 == end2) 
 			goto nextline;
 
-		if (!strcmp(start, "processor"))
-			cpu->processor = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "vendor_id"))
-			strcpy(cpu->vendor_id, end2);
-		if (!strcmp(start, "cpu family"))
-			strcpy(cpu->cpu_family, end2);
-		if (!strcmp(start, "model"))
-			strcpy(cpu->model, end2);
-		if (!strcmp(start, "model name"))
-			strcpy(cpu->model_name, end2);
-		if (!strcmp(start, "stepping"))
-			strcpy(cpu->stepping, end2);
-		if (!strcmp(start, "microcode"))
-			strcpy(cpu->microcode, end2);
-		if (!strcmp(start, "cpu MHz"))
-			strcpy(cpu->cpu_mhz, end2);
-		if (!strcmp(start, "cache size"))
-			strcpy(cpu->cache_size, end2);
-		if (!strcmp(start, "physical id"))
-			cpu->physical_id = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "siblings"))
-			cpu->siblings = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "core id"))
-			cpu->core_id = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "cpu cores"))
-			cpu->cpu_cores = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "apicid"))
-			cpu->apicid = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "initial apicid"))
-			cpu->initial_apicid = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "fpu"))
-			strcpy(cpu->fpu, end2);
-		if (!strcmp(start, "fpu_exception"))
-			strcpy(cpu->fpu_exception, end2);
-		if (!strcmp(start, "cpuid level"))
-			cpu->cpu_id_level = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "wp"))
-			strcpy(cpu->wp, end2);
-		if (!strcmp(start, "flags"))
-			strcpy(cpu->flags, end2);
-		if (!strcmp(start, "vmx flags"))
-			strcpy(cpu->vmx_flags, end2);
-		if (!strcmp(start, "bugs"))
-			strcpy(cpu->bugs, end2);
-		if (!strcmp(start, "bogomips"))
-			cpu->bogomips = atof(end2);
-		if (!strcmp(start, "clflush size"))
-			cpu->clflush_size = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "cache_alignment"))
-			cpu->cache_alignment = strtoul(end2, NULL, 10);
-		if (!strcmp(start, "address sizes"))
-			strcpy(cpu->address_sizes, end2);
-		if (!strcmp(start, "power management"))
-			strcpy(cpu->power_mgmt, end2);
+		if (!strcmp(start, "processor")) {
+			/*
+			 * If probe is set, then this is being called during
+			 * testing from res_exist(). In that case, set value of
+			 * each field to 1 to indicate whether that field exists
+			 * in /proc/cpuinfo. This is needed as not all values are
+			 * present on all OSes.
+			 */
+			if (probe)
+				cpu->processor = 1;
+			else
+				cpu->processor = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "vendor_id")) {
+			if (probe)
+				cpu->vendor_id[0] = 1;
+			else
+				strcpy(cpu->vendor_id, end2);
+		}
+		if (!strcmp(start, "cpu family")) {
+			if (probe)
+				cpu->cpu_family[0] = 1;
+			else
+				strcpy(cpu->cpu_family, end2);
+		}
+		if (!strcmp(start, "model")) {
+			if (probe)
+				cpu->model[0] = 1;
+			else
+				strcpy(cpu->model, end2);
+		}
+		if (!strcmp(start, "model name")) {
+			if (probe)
+				cpu->model_name[0] = 1;
+			else
+				strcpy(cpu->model_name, end2);
+		}
+		if (!strcmp(start, "stepping")) {
+			if (probe)
+				cpu->stepping[0] = 1;
+			else
+				strcpy(cpu->stepping, end2);
+		}
+		if (!strcmp(start, "microcode")) {
+			if (probe)
+				cpu->microcode[0] = 1;
+			else
+				strcpy(cpu->microcode, end2);
+		}
+		if (!strcmp(start, "cpu MHz")) {
+			if (probe)
+				cpu->cpu_mhz[0] = 1;
+			else
+				strcpy(cpu->cpu_mhz, end2);
+		}
+		if (!strcmp(start, "cache size")) {
+			if (probe)
+				cpu->cache_size[0] = 1;
+			else
+				strcpy(cpu->cache_size, end2);
+		}
+		if (!strcmp(start, "physical id")) {
+			if (probe)
+				cpu->physical_id = 1;
+			else
+				cpu->physical_id = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "siblings")) {
+			if (probe)
+				cpu->siblings = 1;
+			else
+				cpu->siblings = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "core id")) {
+			if (probe)
+				cpu->core_id = 1;
+			else
+				cpu->core_id = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "cpu cores")) {
+			if (probe)
+				cpu->cpu_cores = 1;
+			else
+				cpu->cpu_cores = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "apicid")) {
+			if (probe)
+				cpu->apicid = 1;
+			else
+				cpu->apicid = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "initial apicid")) {
+			if (probe)
+				cpu->initial_apicid = 1;
+			else
+				cpu->initial_apicid = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "fpu")) {
+			if (probe)
+				cpu->fpu[0] = 1;
+			else
+				strcpy(cpu->fpu, end2);
+		}
+		if (!strcmp(start, "fpu_exception")) {
+			if (probe)
+				cpu->fpu_exception[0] = 1;
+			else
+				strcpy(cpu->fpu_exception, end2);
+		}
+		if (!strcmp(start, "cpuid level")) {
+			if (probe)
+				cpu->cpu_id_level = 1;
+			else
+				cpu->cpu_id_level = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "wp")) {
+			if (probe)
+				cpu->wp[0] = 1;
+			else
+				strcpy(cpu->wp, end2);
+		}
+		if (!strcmp(start, "flags")) {
+			if (probe)
+				cpu->flags[0] = 1;
+			else
+				strcpy(cpu->flags, end2);
+		}
+		if (!strcmp(start, "vmx flags")) {
+			if (probe)
+				cpu->vmx_flags[0] = 1;
+			else
+				strcpy(cpu->vmx_flags, end2);
+		}
+		if (!strcmp(start, "bugs")) {
+			if (probe)
+				cpu->bugs[0] = 1;
+			else
+				strcpy(cpu->bugs, end2);
+		}
+		if (!strcmp(start, "bogomips")) {
+			if (probe)
+				cpu->bogomips = 1;
+			else
+				cpu->bogomips = atof(end2);
+		}
+		if (!strcmp(start, "clflush size")) {
+			if (probe)
+				cpu->clflush_size = 1;
+			else
+				cpu->clflush_size = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "cache_alignment")) {
+			if (probe)
+				cpu->cache_alignment = 1;
+			else
+				cpu->cache_alignment = strtoul(end2, NULL, 10);
+		}
+		if (!strcmp(start, "address sizes")) {
+			if (probe)
+				cpu->address_sizes[0] = 1;
+			else
+				strcpy(cpu->address_sizes, end2);
+		}
+		if (!strcmp(start, "power management")) {
+			if (probe)
+				cpu->power_mgmt[0] = 1;
+			else
+				strcpy(cpu->power_mgmt, end2);
+		}
 
 nextline:
 		start = start2;
@@ -159,12 +272,33 @@ static inline int get_buffer(char *fname, char *buf, unsigned int bufsz)
 	return count;
 }
 
+int getcpuexist(int res_id, void *exist, size_t sz, void *hint, int flags)
+{
+	char *buffer = NULL;
+	int len, cpu_num;
+
+	memset(exist, 0, sz);
+	cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
+	buffer = (char *) malloc(cpu_num * sizeof(struct cpuinfo));
+	if (buffer == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+	len = get_buffer("./cpu_info.orig", buffer, sz);
+	if (len == -1)
+		return -1;
+	len = populate_cpuinfo(exist, buffer, len, 1);
+	free(buffer);
+	return len;
+}
+
 int getcpuinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 {
 	int len, cpu_num;
 	char *buffer = NULL;
 
 	cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
+	memset(out, 0, sz);
 
 	switch (res_id) {
 	case RES_CPU_INFO:
@@ -181,7 +315,7 @@ int getcpuinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 #endif
 		if (len == -1)
 			return -1;
-		len = populate_cpuinfo(out, buffer, len);
+		len = populate_cpuinfo(out, buffer, len, 0);
 		free(buffer);
 		break;
 	case RES_CPU_CORECOUNT: 

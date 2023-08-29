@@ -224,6 +224,8 @@ int res_exist(int res_id, void *out, size_t out_sz, void *hint, int pid, int fla
 		return getvmexist(res_id, out, out_sz, hint, flags);
 	if (res_id >= MEM_MIN && res_id < MEM_MAX)
 		return getmemexist(res_id, out, out_sz, hint, flags);
+	if (res_id >= CPU_MIN && res_id < CPU_MAX)
+		return getcpuexist(res_id, out, out_sz, hint, flags);
 	return 0;
 }
 
