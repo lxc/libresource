@@ -286,6 +286,7 @@ int populate_vminfo(void *out, int ex)
 int getvmexist(int res_id, void *exist, size_t sz, void *hint, int flags)
 {
 	int ret;
+	memset(exist, 0, sz);
 	ret = file_to_buf("./vm_info.orig", buffer, sizeof(buffer));
 	if (ret == -1)
 		return -1;
@@ -298,6 +299,7 @@ int getvmstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 	int ret;
 	struct vmstat out1;
 	memset(&out1, 0, sizeof(out1));
+	memset(out, 0, sz);
 
 #ifdef TESTING
 	ret = file_to_buf("./vm_info.orig", buffer, sizeof(buffer));
