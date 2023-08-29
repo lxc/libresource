@@ -504,7 +504,7 @@ int getmeminfo(int res_id, void *out, size_t sz, void **hint, int pid, int flags
 		}
 
 #ifdef TESTING
-		ret = file_to_buf("./mem_info1.orig", buf, sizeof(buf));
+		ret = file_to_buf("./mem_info.orig", buf, sizeof(buf));
 #else
 		ret = file_to_buf(MEMINFO_FILE, buf, sizeof(buf));
 #endif
