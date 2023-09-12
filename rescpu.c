@@ -32,9 +32,9 @@
 static int populate_cpuinfo(void *out, char *buffer, int total_len, int probe)
 {
 	char *end, *start, *start2, *end2;
+	char end3[1];
 	int bytes_done = 0;
 	struct cpuinfo *cpu = (struct cpuinfo *)out;
-
 
 	start = buffer;
 	while(1) {
@@ -52,7 +52,10 @@ static int populate_cpuinfo(void *out, char *buffer, int total_len, int probe)
 		if (*(end+1) == '\n') {
 			start2 = end+1;
 			bytes_done++;
-			goto nextline;
+			end[0] = '\0';
+			end2 = end3;
+			end2[0] = '\0';
+			goto next;
 		}
 		end2 = end+2;
 		bytes_done += 2;
@@ -72,6 +75,7 @@ static int populate_cpuinfo(void *out, char *buffer, int total_len, int probe)
 		if (start == end || start2 == end2) 
 			goto nextline;
 
+next:
 		if (!strcmp(start, "processor")) {
 			/*
 			 * If probe is set, then this is being called during
