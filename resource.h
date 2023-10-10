@@ -124,6 +124,11 @@ typedef struct res_blk {
 #define NET_MIN				2048
 #define RES_NET_IFSTAT			2049
 #define RES_NET_ALLIFSTAT		2050
+#define RES_NET_IP_LOCAL_PORT_RANGE     2051
+#define RES_NET_TCP_RMEM_MAX            2052
+#define RES_NET_TCP_WMEM_MAX            2053
+#define RES_NET_RMEM_MAX                2054
+#define RES_NET_WMEM_MAX                2055
 #define NET_MAX				2051
 
 #define KERN_MIN			3072
@@ -141,7 +146,11 @@ typedef struct res_blk {
 #define RES_VMSTAT_PGPGOUT		5003
 #define RES_VMSTAT_SWAPIN		5004
 #define RES_VMSTAT_SWAPOUT		5005
-#define VM_MAX				5006
+#define RES_VMSTAT_PGALLOC		5006
+#define RES_VMSTAT_PGREFILL		5007
+#define RES_VMSTAT_PGSCAN		5008
+#define RES_VMSTAT_PGSTEAL		5009
+#define VM_MAX				5010
 
 #define CPU_MIN				6000
 #define RES_CPU_INFO			6001
