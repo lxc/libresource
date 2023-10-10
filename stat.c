@@ -29,7 +29,7 @@
 #include <libgen.h>
 #include "stat.h"
 
-static char buffer[9000];
+static char buffer[20000];
 
 static int populate_statcpu(struct cpu_stat *all_cpu, int cpu_num)
 {
@@ -63,7 +63,7 @@ static int populate_statcpu(struct cpu_stat *all_cpu, int cpu_num)
 
 static int populate_statinfo(void *out, int test)
 {
-	const char *cstr;
+	char *cstr;
 	struct stat_info *st;
 	int cpu_num;
 
@@ -83,8 +83,15 @@ static int populate_statinfo(void *out, int test)
 				&st->cpu.guest_nice);
 	}
 	cstr = strstr(buffer, "intr ");
-	if (cstr)
-		sscanf(cstr, "intr %Lu", &st->intr);
+	if (cstr) {
+		unsigned int bytes = 0;
+		char *cstr1 = cstr + 5;
+		while (*cstr1 != '\n') {
+			cstr1++;
+			bytes++;
+		}
+		strncpy(st->intr, cstr+5, bytes);
+	}
 	cstr = strstr(buffer, "ctxt ");
 	if (cstr)
 		sscanf(cstr, "ctxt %Lu", &st->ctxt);
@@ -101,7 +108,15 @@ static int populate_statinfo(void *out, int test)
 	if (cstr)
 		sscanf(cstr, "procs_blocked %Lu", &st->procs_blocked);
 	cstr = strstr(buffer, "softirq ");
-		sscanf(cstr, "softirq  %Lu", &st->softirq);
+	if (cstr) {
+		unsigned int bytes = 0;
+		char *cstr1 = cstr + 8;
+		while (*cstr1 != '\n') {
+			cstr1++;
+			bytes++;
+		}
+		strncpy(st->softirq, cstr+8, bytes);
+	}
 
 	cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
 	populate_statcpu(st->all_cpu, cpu_num);

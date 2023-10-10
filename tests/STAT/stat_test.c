@@ -66,12 +66,12 @@ int main(int argc, char **argv)
 				all_cpu->guest_nice);
 		all_cpu++;
 	}
-	fprintf(fp, "intr %Lu\n", st->intr);
+	fprintf(fp, "intr %s\n", st->intr);
 	fprintf(fp, "ctxt %Lu\n",st->ctxt);
 	fprintf(fp, "btime %Lu\n", st->btime);
 	fprintf(fp, "processes %Lu\n", st->processes);
 	fprintf(fp, "procs_running %Lu\n", st->procs_running);
 	fprintf(fp, "procs_blocked %Lu\n", st->procs_blocked);
-	fprintf(fp, "softirq  %Lu\n", st->softirq);
+	fprintf(fp, "softirq %s\n", st->softirq);
 	fclose(fp);
 }

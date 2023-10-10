@@ -570,13 +570,13 @@ struct stat_info {
 	struct cpu_stat cpu;
 	struct cpu_stat *all_cpu; /* Array of len cpu_num */
 	int cpu_num;
-	unsigned long long intr; /* total of all interrupts serviced(since boot) */
+	char intr[9000]; // total of all interrupts serviced(since boot)
 	unsigned long long ctxt;
 	unsigned long long btime;
 	unsigned long long processes;
 	unsigned long long procs_running;
 	unsigned long long procs_blocked;
-	unsigned long long softirq; /* Number of softirq for all CPUs. */
+	char softirq[9000]; /* Number of softirq for all CPUs. */
 };
 
 /* Allocating memory and building a res_blk structure to return bulk
