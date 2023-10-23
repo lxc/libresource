@@ -40,7 +40,10 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	fp = fopen ("./mem_info.txt", "w");
-
+	if (fp == NULL) {
+		printf("mem_info.txt does not exist!\n");
+		exit(1);
+	}
 	if (exist.memtotal)
 		fprintf(fp, "MemTotal: %lu kB\n", mem.memtotal);
 	if (exist.memfree)

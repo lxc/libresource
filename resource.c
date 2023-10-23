@@ -31,6 +31,7 @@
 #include "resnet.h"
 #include "resproc.h"
 #include "resvm.h"
+#include "stat.h"
 #include "rescpu.h"
 #include "resfs.h"
 
@@ -211,6 +212,9 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 
 	if (res_id >= DEV_MIN && res_id < DEV_MAX)
 		return getdevinfo(res_id, out, out_sz, hint, flags);
+
+	if (res_id >= STAT_MIN && res_id < STAT_MAX)
+		return getstatinfo(res_id, out, out_sz, hint, flags);
 
 	if (res_id >= FS_MIN && res_id < FS_MAX)
 		return getfsinfo(res_id, out, out_sz, hint, flags);
