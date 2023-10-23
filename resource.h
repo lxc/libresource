@@ -157,6 +157,10 @@ typedef struct res_blk {
 #define RES_CPU_CORECOUNT		6002
 #define CPU_MAX 			6010
 
+#define STAT_MIN			7000
+#define RES_STAT_INFO			7001
+#define STAT_MAX			7002
+
 #define FS_MIN                          8000
 #define FS_AIONR                        8001
 #define FS_AIOMAXNR                     8002
@@ -547,6 +551,32 @@ struct vmstat {
 	unsigned long direct_map_level2_splits;
 	unsigned long direct_map_level3_splits;
 	unsigned long nr_unstable;
+};
+
+struct cpu_stat {
+	unsigned long long user;
+	unsigned long long nice;
+	unsigned long long system;
+	unsigned long long idle;
+	unsigned long long iowait;
+	unsigned long long irq;
+	unsigned long long softirq;
+	unsigned long long steal;
+	unsigned long long guest;
+	unsigned long long guest_nice;
+};
+
+struct stat_info {
+	struct cpu_stat cpu;
+	struct cpu_stat *all_cpu; /* Array of len cpu_num */
+	int cpu_num;
+	char intr[9000]; // total of all interrupts serviced(since boot)
+	unsigned long long ctxt;
+	unsigned long long btime;
+	unsigned long long processes;
+	unsigned long long procs_running;
+	unsigned long long procs_blocked;
+	char softirq[9000]; /* Number of softirq for all CPUs. */
 };
 
 /* Allocating memory and building a res_blk structure to return bulk
