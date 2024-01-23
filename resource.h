@@ -207,6 +207,7 @@ struct cpuinfo {
 	unsigned int cache_alignment;
 	char address_sizes[CPU_STR];
 	char power_mgmt[CPU_STR];
+	char tlb_size[CPU_STR];
 };
 
 struct memstat {

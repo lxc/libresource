@@ -221,6 +221,12 @@ next:
 			else
 				cpu->bogomips = atof(end2);
 		}
+		if (!strcmp(start, "TLB size")) {
+			if (probe)
+				cpu->tlb_size[0] = 1;
+			else
+				strcpy(cpu->tlb_size, end2);
+		}
 		if (!strcmp(start, "clflush size")) {
 			if (probe)
 				cpu->clflush_size = 1;
@@ -245,7 +251,6 @@ next:
 			else
 				strcpy(cpu->power_mgmt, end2);
 		}
-
 nextline:
 		start = start2;
 		start++;
