@@ -106,6 +106,8 @@ int main(int argc, char **argv)
 			fprintf(fp, "bugs\t\t: %s\n",cpu->bugs);
 		if (exist->bogomips)
 			fprintf(fp, "bogomips\t: %0.2f\n",cpu->bogomips);
+		if (exist->tlb_size[0])
+			fprintf(fp, "TLB size\t: %s\n",cpu->tlb_size);
 		if (exist->clflush_size)
 			fprintf(fp, "clflush size\t: %u\n",cpu->clflush_size);
 		if (exist->cache_alignment)
