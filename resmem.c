@@ -353,12 +353,9 @@ int getmemexist(int res_id, void *exist, size_t sz, void *hint, int flags)
 int getmeminfo(int res_id, void *out, size_t sz, void **hint, int pid, int flags)
 {
 	char buf[4096];
-	//FILE *fp;
-	//int err = 0;
 	size_t active_anon, active_file, inactive_anon, inactive_file, cache,
 		swaptotal, swapfree, swtot, swusage, mmusage, mmtot, memtotal;
 	int ret = 0;
-	//res_mem_infoall_t *mminfo;
 
 	char *cg = get_cgroup(pid, MEMCGNAME);
 
