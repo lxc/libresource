@@ -185,7 +185,7 @@ int populate_procinfo(res_blk_t *res, int pid, int flags)
 				(res->res_unit[i]->data).ptr,
 				res->res_unit[i]->data_sz,
 				NULL, pid, flags);
-			res->res_unit[i]->status = RES_STATUS_FILLED;
+			res->res_unit[i]->status = 0;
 		}
 	}
 	return 0;

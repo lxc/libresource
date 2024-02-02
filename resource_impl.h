@@ -72,23 +72,6 @@ static inline char *skip_spaces(char *s, size_t len, int n) {
 	return NULL;
 }
 
-static inline int libres_ulong(char *numstr, unsigned long *converted)
-{
-	char *endptr = NULL;
-	unsigned long uli;
-
-	errno = 0;
-	uli = strtoul(numstr, &endptr, 10);
-
-	if (errno == ERANGE || endptr == numstr ||
-		(*endptr != '\0' && *endptr != '\n')) {
-		return -EINVAL;
-	}
-
-	*converted = uli;
-	return 0;
-}
-
 static inline void clean_init(char *cg)
 {
 	char *p;
@@ -176,17 +159,16 @@ out:
 
 static inline int file_to_buf(char *fname, char *buf, unsigned int bufsz)
 {
-	int fd = 0;
-	size_t rdsz = 0;
-	int err = 0;
+	int fd;
+	size_t rdsz;
+	int err;
 
 	fd = open(fname, O_RDONLY);
 	if (fd == -1) {
 		err = errno;
 		eprintf("Error opening File %s with errno: %d",
 			fname, errno);
-		errno = err;
-		return -1;
+		return -err;
 	}
 
 	rdsz = read(fd, buf, bufsz - 1);
@@ -194,8 +176,7 @@ static inline int file_to_buf(char *fname, char *buf, unsigned int bufsz)
 		err = errno;
 		eprintf("in read from File %s with errno: %d", fname, errno);
 		close(fd);
-		errno = err;
-		return -1;
+		return -err;
 	}
 	buf[rdsz] = '\0';
 	close(fd);
