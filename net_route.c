@@ -348,6 +348,10 @@ static int handle_route_resp(int net_sock, void **out)
 #endif
 			parse_attr(at, RTM_RTA(rt), len);
 			if (rt->rtm_family == AF_INET || rt->rtm_family == AF_INET6) {
+				if ((rt->rtm_type == RTN_BROADCAST) ||
+				    (rt->rtm_type == RTN_MULTICAST))
+					continue;
+
 				get_attr(at, iroutes, rt);
 #ifdef TESTING
 				fp = fopen ("./route_info.txt", "w");

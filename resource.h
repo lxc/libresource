@@ -29,22 +29,6 @@
 /* libresource version */
 #define LIBRESOURCE_API_VERSION (1.0.0)
 
-/* Possible status for libresource information returned */
-/* libresource information was fetched correctly */
-#define RES_STATUS_FILLED 0
-/* There was some error in fetching libresource information. In most cases
- * errno will be set.
- */
-#define RES_STATUS_EMPTY -1
-/* Resource information is not supported yet, or Invalid resource
- * information.
- */
-#define RES_STATUS_NOTSUPPORTED	-2
-/* If partial information was read for a libresource information. For example
- * a string was read partially.
- */
-#define RES_STATUS_TRUNCATED -3
-
 
 /* Maximum size of a resource information data type which can be returned
  * without explicitly allocating memory for it. If resource information

@@ -386,8 +386,9 @@ int populate_netinfo(res_blk_t *res, int pid, int flags)
 				res->res_unit[i]->data_sz,
 				res->res_unit[i]->hint, 0, 0) == -1) {
 				res->res_unit[i]->status = errno;
-			} else
-				res->res_unit[i]->status = RES_STATUS_FILLED;
+			} else {
+				res->res_unit[i]->status = 0;
+			}
 			break;
 		case RES_NET_ALLIFSTAT:
 			/* Currently we don't support RES_NET_ALLIFSTAT with
@@ -399,7 +400,7 @@ int populate_netinfo(res_blk_t *res, int pid, int flags)
 				&(res->res_unit[i]->hint), 0, 0) == -1) {
 				res->res_unit[i]->status = errno;
 			} else {
-				res->res_unit[i]->status = RES_STATUS_FILLED;
+				res->res_unit[i]->status = 0;
 				res->res_unit[i]->data.ptr = p;
 			}
 			break;

@@ -30,7 +30,10 @@
 extern int populate_meminfo(struct res_blk *res, int pid, int flags);
 extern int getmeminfo(int res_id, void *out, size_t sz,
 		void **hint, int pid, int flags);
+extern int getmeminfo_cg(int res_id, void *out, size_t sz,
+		void **hint, int pid, int flags);
 extern int getmemexist(int res_id, void *exist, size_t sz, void *hint,
 		int flags);
+extern int get_info_infile(char *fname, char *res, void *out);
 
 #endif /* _RESMEM_H */
