@@ -51,21 +51,6 @@ int get_info_infile(char *fname, char *res, void *out)
 	return 0;
 }
 
-/*static inline void scan_mem_str(str, info, res)
-{
-	char *loc = NULL;
-
-	loc = strstr(buf, str);
-	if (loc == NULL) {
-		eprintf("%s is not found in file %s", str, MEMINFO_FILE);
-		res->res_unit[i]->status = ENODATA;
-	} else {
-		sscanf(loc, "%*s%zu", &info);
-		(res->res_unit[i]->data).sz = info;
-		res->res_unit[i]->status = RES_STATUS_FILLED;
-	}
-}*/
-
 /* read information from a cgroup file.
  */
 static inline size_t cgmemread(char *cg, char *name, char *elem)
@@ -182,8 +167,6 @@ int getmeminfo_cg(int res_id, void *out, size_t sz, void **hint, int pid, int fl
 int populate_meminfo_cg(res_blk_t *res, int pid, int flags)
 {
 	char *cg;
-	char buf[MEMBUF_2048];
-	int err;
 
 	cg = get_cgroup(pid, MEMCGNAME);
 	if (!cg) {
@@ -192,9 +175,6 @@ int populate_meminfo_cg(res_blk_t *res, int pid, int flags)
 	}
 
 	clean_init(cg);
-
-	if ((err = file_to_buf(MEMINFO_FILE, buf, MEMBUF_2048)) < 0)
-		return err;
 
 	for (int i = 0; i < res->res_count; i++) {
 		switch (res->res_unit[i]->res_id) {
