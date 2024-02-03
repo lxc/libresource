@@ -106,25 +106,25 @@ jobs:
               tests/FS/fs_info.orig
               tests/FS/fs_info.txt
 
-  #route-test:
-  #  name: Route Test
-  #  runs-on: ubuntu-20.04
-  #  needs: build
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - uses: actions/download-artifact@master
-  #    with:
-  #      name: build-artifacts
-  #  - name: Run Route tests
-  #    run: |
-  #      ./tests/ROUTE/route.sh
-  #  - uses: actions/upload-artifact@master
-  #    if: failure()
-  #    with: 
-  #      name: run-artifacts
-  #      path: |
-  #            tests/ROUTE/route_info.orig
-  #            tests/ROUTE/route_info.txt
+  route-test:
+    name: Route Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run Route tests
+      run: |
+        ./tests/ROUTE/route.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+              tests/ROUTE/route_info.orig
+              tests/ROUTE/route_info.txt
 
   #arp-test:
   #  name: ARP Test
