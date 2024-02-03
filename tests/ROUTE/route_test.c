@@ -32,12 +32,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	rtn = rt;
+#ifdef PRINTLOGS
 	for (int i=0;i<nroutes; i++) {
 		if (rt->dst_prefix_len != 0) {
 			printf("%hhu.%hhu.%hhu.%hhu/%02hhu\n",rt->dest[0], rt->dest[1], rt->dest[2], rt->dest[3], rt->dst_prefix_len);
 		}
 		rt++;
 	}
+#endif
 	if (rtn)
 		free(rtn);
 	exit(0);

@@ -28,8 +28,7 @@ static int connect_route()
 	if (net_sock == -1) {
 		err = errno;
 		eprintf("Error in socket(), errno %d\n", err);
-		errno = err;
-		return -1;
+		return -err;
 	}
 	bzero(&nl_saddr, sizeof(nl_saddr));
 	nl_saddr.nl_family = AF_NETLINK;
@@ -38,8 +37,7 @@ static int connect_route()
 		err = errno;
 		eprintf("Error in bind(), errno %d\n", err);
 		close(net_sock);
-		errno = err;
-		return -1;
+		return -err;
 	}
 	return net_sock;
 }
@@ -59,13 +57,13 @@ static int send_route_req(int net_sock)
 	req.nl_hdr.nlmsg_seq = 0;
 
 	req.rt.rtm_family = AF_INET;
+	req.rt.rtm_table = RT_TABLE_MAIN;
 
 	err = send(net_sock, &req, req.nl_hdr.nlmsg_len, 0);
 	if (err == -1) {
 		err = errno;
 		eprintf("Error in request send(), errno %d\n", err);
-		errno = err;
-		return -1;
+		return -err;
 	}
 	return 0;
 }
@@ -73,6 +71,7 @@ static int send_route_req(int net_sock)
 #ifdef TESTING
 #define IPA_F "%hhu.%hhu.%hhu.%hhu"
 #define IPA_V(str) str[0], str[1], str[2], str[3]
+#define V4_PREFIX_LEN 32
 
 static inline bool is_zero(char *str, int len)
 {
@@ -118,7 +117,8 @@ static void print_rt_info(struct rt_info *rt, FILE *fp)
 			fprintf(fp, "default");
 		} else {
 			fprintf(fp, IPA_F, IPA_V(rt->dest));
-			fprintf(fp, "/%02hhu", rt->dst_prefix_len);
+			if (rt->dst_prefix_len != V4_PREFIX_LEN)
+				fprintf(fp, "/%02hhu", rt->dst_prefix_len);
 		}
 		if (!is_zero(rt->gate, MAX_BYTES_IPV4)) {
 			fprintf(fp, " via ");
@@ -132,7 +132,10 @@ static void print_rt_info(struct rt_info *rt, FILE *fp)
 			fprintf(fp, " src ");
 			fprintf(fp, IPA_F, IPA_V(rt->prefsrc));
 		}
-		fprintf(fp, " metric %d \n", rt->metric);
+		if (rt->metric != 0)
+			fprintf(fp, " metric %d \n", rt->metric);
+		else
+			fprintf(fp, " \n");
 	}
 }
 #endif
@@ -218,8 +221,7 @@ static int get_route_len(int net_sock)
 	if (recvl < 0) {
 		err = errno;
 		eprintf("Error in get length recvmsg(), errno %d\n", err);
-		errno = err;
-		return -1;
+		return -err;
 	}
 #ifdef PRINTLOGS
 	printf("received len %d\n",recvl);
@@ -238,7 +240,7 @@ static int get_max_routes(int len)
 
 static int handle_route_resp(int net_sock, void **out)
 {
-	int err, recvl, len, max_routes, rt_size;
+	int recvl, len, max_routes, rt_size;
 	int rtind = 0, total_rt_size = 0;
 	struct iovec iov;
 	struct msghdr msg;
@@ -248,8 +250,16 @@ static int handle_route_resp(int net_sock, void **out)
 	struct rtattr *at[RTA_MAX + 1];
 	struct rt_info *routes = NULL, *iroutes = NULL;
 	struct sockaddr_nl nladdr;
+	unsigned int family;
+	int ret = 0;
+
 #ifdef TESTING
-	FILE *fp = NULL;
+	FILE *fp;
+	fp = fopen("./route_info.txt", "w");
+	if (!fp) {
+		eprintf("Error opening file route_info.txt with errno: %d", errno);
+		return -1;
+	}
 #endif
 
 	memset(&msg, 0, sizeof(msg));
@@ -260,16 +270,18 @@ static int handle_route_resp(int net_sock, void **out)
 
 	while(1) {
 		len = get_route_len(net_sock);
-		if (len == -1) {
+		if (len < 0) {
 			if (routes)
 				free(routes);
-			return -1;
+			ret = len;
+			goto out;
 		}
 		char *buf = (char *)malloc(len);
 		if (!buf) {
 			if (routes)
 				free(routes);
-			return -1;
+			ret = -ENOMEM;
+			goto out;
 		}
 		memset(&iov, 0, sizeof(iov));
 		iov.iov_base = buf;
@@ -283,19 +295,19 @@ static int handle_route_resp(int net_sock, void **out)
 			if (routes)
 				free(routes);
 			free(buf);
-			return -1;
+			ret = -ENOMEM;
+			goto out;
 		}
 		routes = tmp;
 		iroutes = routes + rtind;
 
 		recvl = recvmsg(net_sock, &msg, 0);
 		if (recvl < 0) {
-			err = errno;
+			ret = -errno;
 			free(routes);
 			free(buf);
-			eprintf("Error in response recvmsg(), errno %d\n", err);
-			errno = err;
-			return -1;
+			eprintf("Error in response recvmsg(), errno %d\n", -ret);
+			goto out;
 		}
 #ifdef PRINTLOGS
 		printf("received len %d\n",recvl);
@@ -309,19 +321,16 @@ static int handle_route_resp(int net_sock, void **out)
 				ecount++;
 				free(buf);
 				free(routes);
-				errno = nlmsg_err->error;
-				return -1;
+				ret = -(nlmsg_err->error);
+				goto out;
 			} else if (r->nlmsg_type == NLMSG_DONE) {
 #ifdef PRINTLOGS
 				printf("DONE\n");
 #endif
 				free(buf);
 				*(struct rt_info **)out = routes;
-#ifdef TESTING
-				if (fp)
-					fclose(fp);
-#endif
-				return rtind;
+				ret = rtind;
+				goto out;
 			}
 			rt = (struct rtmsg *)NLMSG_DATA(r);
 			len = r->nlmsg_len;
@@ -338,31 +347,30 @@ static int handle_route_resp(int net_sock, void **out)
 			len -= NLMSG_LENGTH(sizeof(*rt));
 			if (len < 0) {
 				eprintf("nlmsg_len incorrect");
-				errno = EINVAL;
 				free(buf);
 				free(routes);
-				return -1;
+				ret = -EINVAL;
+				goto out;
 			}
 #ifdef PRINTLOGS
 			printf("len after sub %lu is %d\n",sizeof(*rt), len);
 #endif
 			parse_attr(at, RTM_RTA(rt), len);
-			if (rt->rtm_family == AF_INET || rt->rtm_family == AF_INET6) {
+			family = rt->rtm_family;
+			if (family == AF_INET || family == AF_INET6) {
 				if ((rt->rtm_type == RTN_BROADCAST) ||
-				    (rt->rtm_type == RTN_MULTICAST))
+				    (rt->rtm_type == RTN_MULTICAST) ||
+				    (rt->rtm_type == RTN_LOCAL)) {
+					r = NLMSG_NEXT(r, recvl);
 					continue;
+				}
 
 				get_attr(at, iroutes, rt);
 #ifdef TESTING
-				fp = fopen ("./route_info.txt", "w");
 				print_rt_info(iroutes, fp);
 #endif
 				iroutes++;
 				rtind++;
-			} else {
-#ifdef PRINTLOGS
-				printf("Family is %d\n",rt->rtm_family);
-#endif
 			}
 			r = NLMSG_NEXT(r, recvl);
 			count++;
@@ -373,31 +381,31 @@ static int handle_route_resp(int net_sock, void **out)
 #endif
 	}
 	*(struct rt_info **)out = routes;
+	ret = rtind;
+out:
 #ifdef TESTING
 	if (fp)
 		fclose(fp);
 #endif
-	return rtind;
+	return ret;
 }
 
 int get_net_route(void **out)
 {
 	int err, net_sock;
+
 	net_sock = connect_route();
-	if (net_sock == -1)
-		return -1;
+	if (net_sock < 0)
+		return net_sock;
 
 	err = send_route_req(net_sock);
-	if (err == -1) {
+	if (err < 0) {
 		close(net_sock);
-		return -1;
+		return err;
 	}
 
 	err = handle_route_resp(net_sock, out);
-	if (err == -1) {
-		close(net_sock);
-		return -1;
-	}
+	close(net_sock);
 	return err;
 }
 
