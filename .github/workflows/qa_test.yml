@@ -126,25 +126,25 @@ jobs:
               tests/ROUTE/route_info.orig
               tests/ROUTE/route_info.txt
 
-  #arp-test:
-  #  name: ARP Test
-  #  runs-on: ubuntu-20.04
-  #  needs: build
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - uses: actions/download-artifact@master
-  #    with:
-  #      name: build-artifacts
-  #  - name: Run ARP tests
-  #    run: |
-  #      ./tests/ARP/arp.sh
-  #  - uses: actions/upload-artifact@master
-  #    if: failure()
-  #    with: 
-  #      name: run-artifacts
-  #      path: |
-  #           tests/ARP/arp_info.orig
-  #            tests/ARP/arp_info.txt 
+  arp-test:
+    name: ARP Test
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@master
+      with:
+        name: build-artifacts
+    - name: Run ARP tests
+      run: |
+        ./tests/ARP/arp.sh
+    - uses: actions/upload-artifact@master
+      if: failure()
+      with: 
+        name: run-artifacts
+        path: |
+             tests/ARP/arp_info.orig
+              tests/ARP/arp_info.txt 
 
   stat-test:
     name: STAT Test
