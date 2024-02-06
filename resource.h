@@ -105,7 +105,7 @@ typedef struct res_blk {
 #define RES_NET_DEV_ALL                 2022
 #define DEV_MAX                         2030
 
-#define NET_MIN				2048
+#define RES_NET_MIN			2048
 #define RES_NET_IFSTAT			2049
 #define RES_NET_ALLIFSTAT		2050
 #define RES_NET_IP_LOCAL_PORT_RANGE     2051
@@ -113,7 +113,7 @@ typedef struct res_blk {
 #define RES_NET_TCP_WMEM_MAX            2053
 #define RES_NET_RMEM_MAX                2054
 #define RES_NET_WMEM_MAX                2055
-#define NET_MAX				2051
+#define RES_NET_MAX			2051
 
 #define KERN_MIN			3072
 #define RES_KERN_COMPILE_TIME		3073

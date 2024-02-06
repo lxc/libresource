@@ -15,33 +15,8 @@
 #include <errno.h>
 #include <string.h>
 #include "resource_impl.h"
+#include "net.h"
     
-static int count, ecount;
-
-static int connect_arp()
-{
-	struct sockaddr_nl nl_saddr;
-	int err, net_sock;
-
-	net_sock = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
-	if (net_sock == -1) {
-		err = errno;
-		eprintf("Error in socket(), errno %d\n", err);
-		return -err;
-	}
-	bzero(&nl_saddr, sizeof(nl_saddr));
-	nl_saddr.nl_family = AF_NETLINK;
-	nl_saddr.nl_groups = RTMGRP_NEIGH;
-	err = bind(net_sock, (struct sockaddr *)&nl_saddr, sizeof(nl_saddr));
-	if (err == -1) {
-		err = errno;
-		eprintf("Error in bind(), errno %d\n", err);
-		close(net_sock);
-		return -err;
-	}
-	return net_sock;
-}
-
 static int send_arp_req(int net_sock)
 {
 	int err;
@@ -68,7 +43,7 @@ static int send_arp_req(int net_sock)
 	return 0;
 }
 
-static int parse_attr(struct rtattr *at[], struct rtattr *rta, int len)
+int parse_arp_attr(struct rtattr *at[], struct rtattr *rta, int len)
 {
 	memset(at, 0, sizeof(struct rtattr *) * (NDA_MAX + 1));
 	while (RTA_OK(rta, len)) {
@@ -79,49 +54,13 @@ static int parse_attr(struct rtattr *at[], struct rtattr *rta, int len)
 	return 0;
 }
 
-static int get_arp_len(int net_sock)
-{
-	int recvl, err;
-	struct msghdr msg;
-	struct iovec iov;
-	struct sockaddr_nl nladdr;
-
-	memset(&msg, 0, sizeof(msg));
-	memset(&iov, 0, sizeof(iov));
-
-	msg.msg_name = &nladdr;
-	msg.msg_namelen = sizeof(nladdr);
-	iov.iov_base = NULL;
-	iov.iov_len = 0;
-
-	msg.msg_iov = &iov;
-	msg.msg_iovlen = 1;
-
-	recvl = recvmsg(net_sock, &msg, MSG_PEEK | MSG_TRUNC);
-	if (recvl < 0) {
-		err = errno;
-		eprintf("Error in get length recvmsg(), errno %d\n", err);
-		return -err;
-	}
-#ifdef PRINTLOGS1
-	printf("received len %d\n",recvl);
-#endif
-	return recvl;
-}
-
-static int get_max_arp(int len)
-{
-	int header_size, max_arp;
-	header_size = (sizeof(struct nlmsghdr)) + (sizeof(struct ndmsg));
-	max_arp = len/header_size;
-	return max_arp;
-}
-
 #ifdef TESTING
-static int get_attr(struct rtattr *at[], struct arp_info *arp, struct ndmsg *n,
+int get_arp_attr(struct rtattr *at[], struct arp_info *arp,
+		struct ndmsg *n,
 		FILE *fp)
 #else
-static int get_attr(struct rtattr *at[], struct arp_info *arp, struct ndmsg *n)
+int get_arp_attr(struct rtattr *at[], struct arp_info *arp,
+		struct ndmsg *n)
 #endif
 {
 #ifdef TESTING
@@ -160,160 +99,11 @@ static int get_attr(struct rtattr *at[], struct arp_info *arp, struct ndmsg *n)
 	return 0;
 }
 
-static int handle_arp_resp(int net_sock, void **out)
-{
-	int recvl, len, max_arp, arp_size, ret = 0;
-	int aind = 0, total_arp_size = 0;
-	struct iovec iov;
-	struct msghdr msg;
-	struct nlmsghdr *r;
-	struct nlmsgerr *nlmsg_err;
-	struct ndmsg *nd_msg;
-	struct rtattr *at[NDA_MAX + 1], *rta;
-	struct arp_info *arps = NULL, *iarps = NULL;
-	struct sockaddr_nl nladdr;
-	unsigned int type, family;
-#ifdef TESTING
-	FILE *fp;
-	fp = fopen("./arp_info.txt", "w");
-	if (!fp) {
-		eprintf("Error opening file arp_info.txt with errno: %d", errno);
-		return -1;
-	}
-#endif
-
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_name = &nladdr;
-	msg.msg_namelen = sizeof(nladdr);
-	msg.msg_iov = &iov;
-	msg.msg_iovlen = 1;
-
-	while(1) {
-		len = get_arp_len(net_sock);
-		if (len < 0) {
-			if (arps)
-				free(arps);
-			ret = len;
-			goto out;
-		}
-		char *buf = (char *)malloc(len);
-		if (!buf) {
-			if (arps)
-				free(arps);
-			ret = -ENOMEM;
-			goto out;
-		}
-		memset(&iov, 0, sizeof(iov));
-		iov.iov_base = buf;
-		iov.iov_len = len;
-		max_arp = get_max_arp(len);
-		arp_size = max_arp * sizeof(struct arp_info);
-		total_arp_size += arp_size;
-
-		void *tmp = (struct arp_info *) realloc(arps, total_arp_size);
-		if (!tmp) {
-			if (arps)
-				free(arps);
-			free(buf);
-			ret = -ENOMEM;
-			goto out;
-		}
-		arps = tmp;
-		iarps = arps + aind;
-
-		recvl = recvmsg(net_sock, &msg, 0);
-		if (recvl < 0) {
-			ret = -errno;
-			free(arps);
-			free(buf);
-			eprintf("Error in response recvmsg(), errno %d\n", -ret);
-			goto out;
-		}
-#ifdef PRINTLOGS
-		printf("received len %d\n",recvl);
-#endif
-		r = (struct nlmsghdr *) buf;
-		while (NLMSG_OK(r, recvl)) {
-			if (r->nlmsg_type == NLMSG_ERROR) {
-				nlmsg_err = (struct nlmsgerr *)NLMSG_DATA(r);
-				eprintf("NLMSG_ERROR error: %d\n",
-						nlmsg_err->error);
-				ecount++;
-				free(buf);
-				free(arps);
-				ret = -(nlmsg_err->error);
-				goto out;
-			} else if (r->nlmsg_type == NLMSG_DONE) { 
-#ifdef PRINTLOGS
-				printf("DONE\n");
-#endif
-				free(buf);
-				*(struct arp_info **)out = arps;
-				ret = aind;
-				goto out;
-			}
-			nd_msg = (struct ndmsg *)NLMSG_DATA(r);
-			len = r->nlmsg_len;
-#ifdef PRINTLOGS
-			printf("r->nlmsg_type is %d (RTM_NEWNEIGH = 28)\n", r->nlmsg_type);
-			printf("Received ndmsg, len %d\n", len);
-			printf("ifindex is %d\n", nd_msg->ndm_ifindex);
-			printf("family: %u\n", nd_msg->ndm_family);
-			printf("ndm_type: %u\n", nd_msg->ndm_type);
-			printf("ndm_flags: %u\n",nd_msg->ndm_flags);
-			printf("ndm_state: %u\n", nd_msg->ndm_state);
-#endif
-			len -= NLMSG_LENGTH(sizeof(*nd_msg));
-			if (len < 0) {
-				eprintf("nlmsg_len incorrect");
-				free(buf);
-				free(arps);
-				ret = -EINVAL;
-				goto out;
-			}
-#ifdef PRINTLOGS
-			printf("len after sub %ld is %d\n",sizeof(*nd_msg), len);
-#endif
-			rta = ((struct rtattr *) (((char *) (nd_msg)) + NLMSG_ALIGN(sizeof(struct ndmsg))));
-			parse_attr(at, rta, len);
-			family = nd_msg->ndm_family;
-			type = nd_msg->ndm_type;
-			if (family == AF_INET || family == AF_INET6) {
-				if ((type == RTN_BROADCAST) ||
-				     (type == RTN_MULTICAST) ||
-				     (type == RTN_LOCAL)) {
-					r = NLMSG_NEXT(r, recvl);
-					continue;
-				}
-#ifdef TESTING
-				get_attr(at, iarps, nd_msg, fp);
-#else
-				get_attr(at, iarps, nd_msg);
-#endif
-				iarps++;
-				aind++;
-			}
-			r = NLMSG_NEXT(r, recvl);
-			count++;
-		}
-		free(buf);
-		printf("No. of ARPs: %d\n",aind);
-	}
-	*(struct arp_info **)out = arps;
-	ret = aind;
-out:
-#ifdef TESTING
-	if (fp)
-		fclose(fp);
-#endif
-	return ret;
-}
-
 int get_net_arp(void **out)
 {
 	int err, net_sock;
 
-	net_sock = connect_arp();
+	net_sock = connect_netlink(1);
 	if (net_sock < 0)
 		return net_sock;
 
@@ -323,7 +113,7 @@ int get_net_arp(void **out)
 		return err;
 	}
 
-	err = handle_arp_resp(net_sock, out);
+	err = handle_net_resp(NET_ARP, net_sock, out);
 	close(net_sock);
 	return err;
 }
@@ -339,8 +129,7 @@ int getarpinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 		break;
 	default:
 		eprintf("Resource Id is invalid");
-		errno = EINVAL;
-		return -1;
+		return -EINVAL;
 	}
 	return len;
 }
