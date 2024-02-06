@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 	struct arp_info *arp = NULL, *arpn;
 
 	narps = res_read(RES_NET_ARP_ALL, NULL, 0, (void **)&arp, 0, 0);
-	if (narps == -1) {
+	if (narps < 0) {
+		printf("res_read() returned %d\n", narps);
 		exit(1);
 	}
 	arpn = arp;

@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 	struct rt_info *rt = NULL, *rtn;
 
 	nroutes = res_read(RES_NET_ROUTE_ALL, NULL, 0, (void **)&rt, 0, 0);
-	if (nroutes == -1) {
+	if (nroutes < 0) {
+		printf("res_read() returned %d\n", nroutes);
 		exit(1);
 	}
 	rtn = rt;

@@ -34,8 +34,10 @@ int main(int argc, char **argv)
 	size = sizeof(struct cpu_stat) * cpu_num;
 	stats.all_cpu = (struct cpu_stat *) malloc(size);
 	err = res_read(RES_STAT_INFO, &stats, sizeof(stats)+size, NULL, 0, 0);
-	if (err != 0)
-		printf("err is %d\n",err);
+	if (err != 0) {
+		printf("res_read() err is %d\n",err);
+		exit(1);
+	}
 	st = &stats;
 	fp = fopen ("./stat_info.txt", "w");
 	if (fp == NULL) {

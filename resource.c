@@ -196,7 +196,7 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 		return getmeminfo(res_id, out, out_sz, hint, pid, flags);
 #endif
 
-	if (res_id >= NET_MIN && res_id < NET_MAX)
+	if (res_id >= RES_NET_MIN && res_id < RES_NET_MAX)
 		return getnetinfo(res_id, out, out_sz, hint, pid, flags);
 
 	if (res_id >= VM_MIN && res_id < VM_MAX)
