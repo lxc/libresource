@@ -189,12 +189,15 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 	if (res_id >= PROC_MIN && res_id < PROC_MAX)
 		return getprocinfo(res_id, out, out_sz, hint, pid, flags);
 
-	if (res_id >= MEM_MIN && res_id < MEM_MAX)
-#ifdef CGROUPS
-		return getmeminfo_cg(res_id, out, out_sz, hint, pid, flags);
-#else
-		return getmeminfo(res_id, out, out_sz, hint, pid, flags);
-#endif
+	if (res_id >= MEM_MIN && res_id < MEM_MAX) {
+		if (pid > 0) {
+			return getmeminfo_cg(res_id, out, out_sz, hint,
+					     pid, flags);
+		} else {
+			return getmeminfo(res_id, out, out_sz, hint,
+					  pid, flags);
+		}
+	}
 
 	if (res_id >= RES_NET_MIN && res_id < RES_NET_MAX)
 		return getnetinfo(res_id, out, out_sz, hint, pid, flags);
@@ -314,12 +317,13 @@ int res_read_blk(res_blk_t *res, int pid, int flags)
 
 	if (isprocreq)
 		populate_procinfo(res, pid, flags);
-	if (ismeminforeq)
-#ifdef CGROUPS
-		return (populate_meminfo_cg(res, pid, flags));
-#else
-		return (populate_meminfo(res, pid, flags));
-#endif
+	if (ismeminforeq) {
+		if (pid > 0) {
+			return (populate_meminfo_cg(res, pid, flags));
+		} else {
+			return (populate_meminfo(res, pid, flags));
+		}
+	}
 
 	if (isnetdevreq)
 		populate_netinfo(res, pid, flags);

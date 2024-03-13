@@ -25,7 +25,6 @@
 int main(int argc, char **argv)
 {
 	struct memstat mem, exist;
-	unsigned long value;
 	FILE *fp;
 	int ret;
 

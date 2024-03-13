@@ -129,10 +129,9 @@ int getstatexist(int res_id, void *exist, size_t sz, void *hint, int flags)
 {
 	int ret;
 	ret = file_to_buf("./stat_info.orig", buffer, sizeof(buffer));
-	if (ret == -1)
-		return -1;
-	ret = populate_statinfo(exist, 1);
-	return ret;
+	if (ret < 0)
+		return ret;
+	return (populate_statinfo(exist, 1));
 }
 
 int getstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
@@ -144,8 +143,8 @@ int getstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 #else	
 	ret = file_to_buf(STAT_FILE, buffer, sizeof(buffer));
 #endif
-	if (ret == -1)
-		return -1;
+	if (ret < 0)
+		return ret;
 
 	switch (res_id) {
 	case RES_STAT_INFO:

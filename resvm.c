@@ -288,8 +288,8 @@ int getvmexist(int res_id, void *exist, size_t sz, void *hint, int flags)
 	int ret;
 	memset(exist, 0, sz);
 	ret = file_to_buf("./vm_info.orig", buffer, sizeof(buffer));
-	if (ret == -1)
-		return -1;
+	if (ret < 0)
+		return ret;
 	ret = populate_vminfo(exist, 1);
 	return ret;
 }
@@ -306,8 +306,8 @@ int getvmstatinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 #else	
 	ret = file_to_buf(VMINFO_FILE, buffer, sizeof(buffer));
 #endif
-	if (ret == -1)
-		return -1;
+	if (ret < 0)
+		return ret;
 
 	switch (res_id) {
 	case RES_VMSTAT_INFO:

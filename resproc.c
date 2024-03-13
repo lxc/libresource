@@ -132,15 +132,6 @@ int getprocinfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags
 	res_proc_infoall_t *p;
 	char buf[PROCBUF_1024];
 
-#define CHECK_SIZE(sz, req_sz)						\
-	if (sz < req_sz) {						\
-		eprintf("memory (%ld) is not enough to hold data (%ld)",\
-		sz, req_sz);						\
-		errno = ENOMEM;						\
-		return -1;						\
-	}
-
-
 	switch (res_id) {
 	case RES_PROC_INFOALL:
 		CHECK_SIZE(sz, sizeof(res_proc_infoall_t));

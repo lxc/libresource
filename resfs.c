@@ -37,16 +37,16 @@ int getfsinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 	switch (res_id) {
 	case FS_AIONR:
 		ret = file_to_buf(AIONR, buffer, sizeof(buffer));
-		if (ret <= 0)
-			return -1;
+		if (ret < 0)
+			return ret;
 		ret = sscanf(buffer, "%Lu", (unsigned long long *) out);
 		if (ret != 1)
 			return -1;
 		break;
 	case FS_AIOMAXNR:
 		ret = file_to_buf(AIOMAXNR, buffer, sizeof(buffer));
-		if (ret <= 0)
-			return -1;
+		if (ret < 0)
+			return ret;
 		ret = sscanf(buffer, "%Lu", (unsigned long long *) out);
 		if (ret != 1)
 			return -1;
@@ -54,16 +54,16 @@ int getfsinfo(int res_id, void *out, size_t sz, void **hint, int flags)
 	case FS_FILENR:
 		fs = (unsigned long long *) out;
 		ret = file_to_buf(FILENR, buffer, sizeof(buffer));
-		if (ret <= 0)
-			return -1;
+		if (ret < 0)
+			return ret;
 		ret = sscanf(buffer, "%Lu %Lu %Lu", &fs[0], &fs[1], &fs[2]);
 		if (ret != 3)
 			return -1;
 		break;
 	case FS_FILEMAXNR:
 		ret = file_to_buf(FILEMAXNR, buffer, sizeof(buffer));
-		if (ret <= 0)
-			return -1;
+		if (ret < 0)
+			return ret;
 		ret = sscanf(buffer, "%Lu", (unsigned long long *) out);
 		if (ret != 1)
 			return -1;
