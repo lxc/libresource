@@ -28,6 +28,7 @@
 #define MEMCGNAME	"memory"
 
 extern int populate_meminfo(struct res_blk *res, int pid, int flags);
+extern int populate_meminfo_cg(res_blk_t *res, int pid, int flags);
 extern int getmeminfo(int res_id, void *out, size_t sz,
 		void **hint, int pid, int flags);
 extern int getmeminfo_cg(int res_id, void *out, size_t sz,

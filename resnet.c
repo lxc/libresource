@@ -260,47 +260,39 @@ int getnetinfo(int res_id, void *out, size_t sz, void *hint, int pid, int flags)
 	char buffer[4096];
 	unsigned long long *n = (unsigned long long *) out;
 
-#define CHECK_SIZE(sz, req_sz)						\
-	if (sz < req_sz) {						\
-		eprintf("memory (%ld) is not enough to hold data (%ld)",\
-			sz, req_sz);					\
-		errno = ENOMEM;						\
-		return -1;						\
-	}
-
 	switch (res_id) {
 	case RES_NET_IP_LOCAL_PORT_RANGE:
 		ret = file_to_buf(IP_PORT_RANGE, buffer, sizeof(buffer));
-		if (ret == -1)
-			return -1;
+		if (ret < 0)
+			return ret;
 		sscanf(buffer, "%Lu %Lu", &n[0], &n[1]);
 		break;
 
 	case RES_NET_TCP_RMEM_MAX:
 		ret = file_to_buf(TCP_RMEM_MAX, buffer, sizeof(buffer));
-		if (ret == -1)
-			return -1;
+		if (ret < 0)
+			return ret;
 		sscanf(buffer, "%Lu %Lu %Lu", &n[0], &n[1], &n[2]);
 		break;
 
 	case RES_NET_TCP_WMEM_MAX:
 		ret = file_to_buf(TCP_WMEM_MAX, buffer, sizeof(buffer));
-		if (ret == -1)
-			return -1;
+		if (ret < 0)
+			return ret;
 		sscanf(buffer, "%Lu %Lu %Lu", &n[0], &n[1], &n[2]);
 		break;
 
 	case RES_NET_RMEM_MAX:
 		ret = file_to_buf(CORE_RMEM_MAX, buffer, sizeof(buffer));
-		if (ret == -1)
-			return -1;
+		if (ret < 0)
+			return ret;
 		sscanf(buffer, "%Lu", n);
 		break;
 
 	case RES_NET_WMEM_MAX:
 		ret = file_to_buf(CORE_WMEM_MAX, buffer, sizeof(buffer));
-		if (ret == -1)
-			return -1;
+		if (ret < 0)
+			return ret;
 		sscanf(buffer, "%Lu", n);
 		break;
 

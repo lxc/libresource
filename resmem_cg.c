@@ -27,8 +27,6 @@
 #include <errno.h>
 #include <libgen.h>
 
-static int cg_error;
-
 /* read a specific information from file on the basis of a string.
  * String should tell what information is being read.
  */
@@ -53,17 +51,93 @@ int get_info_infile(char *fname, char *res, void *out)
 
 /* read information from a cgroup file.
  */
-static inline size_t cgmemread(char *cg, char *name, char *elem)
+static inline int cgmem(char *cg, char *name, unsigned long *out)
 {
 	char fn[FNAMELEN];
-	unsigned long ret;
+	int ret;
+	char buf[2048];
 
-	snprintf(fn, FNAMELEN, "%s/%s%s/%s", DEFAULTCGFS,
-		MEMCGNAME, cg, name);
+	snprintf(fn, FNAMELEN, "%s/%s", cg, name);
 
-	cg_error = get_info_infile(fn, elem, &ret);
+	ret = file_to_buf(fn, buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
 
-	return ret / 1024;
+	if (strncmp(buf, "max", 3) == 0) {
+		ret = get_info_infile(MEMINFO_FILE, "MemTotal:", out);
+		if (ret < 0)
+			return ret;
+		/*
+		 * MemTotal from /proc/meminfo returns value in kB
+		 * Convert to bytes
+		 */
+		*out *= 1000;
+		return ret;
+	}
+	*out = strtoul(buf, NULL, 10);
+	return 0;
+}
+
+static inline int cgmemval(char *cg, char *name, char *elem,
+			   unsigned long *out)
+{
+	char fn[FNAMELEN];
+
+	snprintf(fn, FNAMELEN, "%s/%s", cg, name);
+
+	return (get_info_infile(fn, elem, out));
+}
+
+static inline int cg_free_mem(char *cg, unsigned long *out)
+{
+	unsigned long mcurr;
+	int err;
+
+	if ((err = cgmem(cg, "memory.max", out)) < 0)
+		return err;
+	if ((err = cgmem(cg, "memory.current", &mcurr)) < 0)
+		return err;
+	*out -= mcurr;
+	return 0;
+}
+
+static inline int cg_free_swap(char *cg, unsigned long *out)
+{
+	unsigned long scurr;
+	int err;
+
+	if ((err = cgmem(cg, "memory.swap.max", out)) < 0)
+		return err;
+	if ((err = cgmem(cg, "memory.swap.current", &scurr)) < 0)
+		return err;
+	*out -= scurr;
+	return 0;
+}
+
+static inline int cg_active(char *cg, unsigned long *out)
+{
+	unsigned long afile;
+	int err;
+
+	if ((err = cgmemval(cg, "memory.stat", "active_anon", out)) < 0)
+		return err;
+	if ((err = cgmemval(cg, "memory.stat", "active_file", &afile)) < 0)
+		return err;
+	*out += afile;
+	return 0;
+}
+
+static inline int cg_inactive(char *cg, unsigned long *out)
+{
+	unsigned long ifile;
+	int err;
+
+	if ((err = cgmemval(cg, "memory.stat", "inactive_anon", out)) < 0)
+		return err;
+	if ((err = cgmemval(cg, "memory.stat", "inactive_file", &ifile)) < 0)
+		return err;
+	*out += ifile;
+	return 0;
 }
 
 /* Get all memory info for a cgroup */
@@ -71,161 +145,88 @@ static int getmeminfoall(char *cg, void *out)
 {
 	res_mem_infoall_t *memall = out;
 
-	memall->memfree = (size_t)
-				(cgmemread(cg, "memory", "limit_in_bytes")
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes"));
-	memall->memavailable = (size_t) 
-				(cgmemread(cg, "memory", "limit_in_bytes")
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes")
-					+
-				 cgmemread(cg, "memory.stat", "cache"));
-	memall->memtotal = (size_t) cgmemread(cg, "memory", "limit_in_bytes");
-	memall->active = (size_t) (cgmemread(cg, "memory", "\nactive_anon")
-					+
-				   cgmemread(cg, "memory", "\nactive_file"));
-	memall->inactive = (size_t) (cgmemread(cg, "memory", "\ninactive_anon") 
-					+
-				     cgmemread(cg, "memory", "\ninactive_file"));
-	memall->swaptotal = (size_t) 
-				cgmemread(cg, "memory", "memsw.limit_in_bytes");
-	memall->swapfree = (size_t)
-				(cgmemread(cg, "memory", "memsw.limit_in_bytes")
-				 	-
-				 cgmemread(cg, "memory", "memsw.usage_in_bytes"));
-	return cg_error;
+	cg_free_mem(cg, &memall->memfree);
+	cgmem(cg, "memory.max", &memall->memtotal);
+	cgmem(cg, "memory.current", &memall->memavailable);
+	cg_active(cg, &memall->active);
+	cg_inactive(cg, &memall->inactive);
+	cgmem(cg, "memory.swap.max", &memall->swaptotal);
+	cg_free_swap(cg, &memall->swapfree);
+	return 0;
 }
 
-/*
- * Returns: -1 on error, 0 on success
- */
-int getmeminfo_cg(int res_id, void *out, size_t sz, void **hint, int pid, int flags)
+static inline int cg_res_val(int res_id, char *cg, unsigned long *out)
 {
-	char *cg;
-
-	cg = get_cgroup(pid, MEMCGNAME);
-	if (!cg) {
-		printf("get_cgroups error\n");
-		return -1;
-	}
-
-	clean_init(cg);
-
 	switch (res_id) {
 	case RES_MEM_FREE:
-		*(size_t *)out = (size_t) 
-				(cgmemread(cg, "memory", "limit_in_bytes") 
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes"));
-		break;
+		return cg_free_mem(cg, out);
 
 	case RES_MEM_AVAILABLE:
-		*(size_t *)out = (size_t) 
-				(cgmemread(cg, "memory", "limit_in_bytes") 
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes")
-				 	+
-				 cgmemread(cg, "memory.stat", "cache"));
+		return cgmem(cg, "memory.current", out);
 		break;
 
 	case RES_MEM_TOTAL:
-		*(size_t *)out = (size_t) 
-				  cgmemread(cg, "memory", "limit_in_bytes");
-		break;
+		return cgmem(cg, "memory.max", out);
 
 	case RES_MEM_ACTIVE:
-		*(size_t *)out = (size_t) (cgmemread(cg, "memory", "\nactive_anon")
-						+
-					   cgmemread(cg, "memory", "\nactive_file"));
-		break;
+		return cg_active(cg, out);
 
 	case RES_MEM_INACTIVE:
-		*(size_t *)out = (size_t) (cgmemread(cg, "memory", "\ninactive_anon") +
-					   cgmemread(cg, "memory", "\ninactive_file"));
-		break;
+		return cg_inactive(cg, out);
 
 	case RES_MEM_SWAPTOTAL:
-		*(size_t *)out = (size_t)
-				cgmemread(cg, "memory", "memsw.limit_in_bytes");
-		break;
+		return cgmem(cg, "memory.swap.max", out);
 
 	case RES_MEM_SWAPFREE:
-		*(size_t *)out = (size_t)
-				(cgmemread(cg, "memory", "memsw.limit_in_bytes")
-					-
-				 cgmemread(cg, "memory", "memsw.usage_in_bytes"));
-		break;
+		return cg_free_swap(cg, out);
+	}
+	return -1;
+}
 
-	case RES_MEM_INFOALL:
-		return (getmeminfoall(cg, out));
+/*
+ * Returns: 0 on success, <0 if error
+ */
+int getmeminfo_cg(int res_id, void *out, size_t sz, void **hint, int pid,
+		  int flags)
+{
+	char *cg;
+	int err;
+
+	cg = get_cgroup(pid, MEMCGNAME);
+	if (!cg)
+		return -1;
+
+	//clean_init(cg);
+
+	if (res_id == RES_MEM_INFOALL) {
+		CHECK_SIZE(sz, sizeof(res_mem_infoall_t));
+		err = getmeminfoall(cg, out);
+		free(cg);
+		return err;
 	}
 
-	return cg_error;
+	CHECK_SIZE(sz, sizeof(unsigned long));
+	err = cg_res_val(res_id, cg, (unsigned long *)out);
+	free(cg);
+	return err;
 }
 
 int populate_meminfo_cg(res_blk_t *res, int pid, int flags)
 {
 	char *cg;
+	int err;
 
 	cg = get_cgroup(pid, MEMCGNAME);
-	if (!cg) {
-		printf("%s: get_cgroups error\n", __FUNCTION__);
+	if (!cg)
 		return -1;
-	}
 
-	clean_init(cg);
+	//clean_init(cg);
 
 	for (int i = 0; i < res->res_count; i++) {
-		switch (res->res_unit[i]->res_id) {
-		case RES_MEM_FREE:
-			(res->res_unit[i]->data).sz = (size_t)
-				(cgmemread(cg, "memory", "limit_in_bytes") 
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes"));
-			break;
-
-		case RES_MEM_AVAILABLE:
-			(res->res_unit[i]->data).sz = (size_t) 
-				(cgmemread(cg, "memory", "limit_in_bytes") 
-				 	-
-				 cgmemread(cg, "memory", "usage_in_bytes")
-				       	+
-				 cgmemread(cg, "memory.stat", "cache"));
-			break;
-
-		case RES_MEM_TOTAL:
-			(res->res_unit[i]->data).sz = (size_t) 
-				cgmemread(cg, "memory", "limit_in_bytes");
-			break;
-
-		case RES_MEM_ACTIVE:
-			(res->res_unit[i]->data).sz = (size_t) 
-				(cgmemread(cg, "memory.stat", "\nactive_anon")
-				 	+
-				 cgmemread(cg, "memory.stat", "\nactive_file"));
-			break;
-
-		case RES_MEM_INACTIVE:
-			(res->res_unit[i]->data).sz = (size_t) 
-				(cgmemread(cg, "memory.stat", "\ninactive_anon")
-				 	+
-				 cgmemread(cg, "memory.stat", "\ninactive_file"));
-			break;
-
-		case RES_MEM_SWAPTOTAL:
-			(res->res_unit[i]->data).sz = 
-				cgmemread(cg, "memory", "memsw.limit_in_bytes");
-			break;
-
-		case RES_MEM_SWAPFREE:
-			(res->res_unit[i]->data).sz = 
-				(cgmemread(cg, "memory", "memsw.limit_in_bytes")
-					-
-				 cgmemread(cg, "memory", "memsw.usage_in_bytes"));
-			break;
-		}
-		res->res_unit[i]->status = cg_error;
+		err = cg_res_val(res->res_unit[i]->res_id, cg,
+				 &((res->res_unit[i]->data).sz));
+		res->res_unit[i]->status = err;
 	}
+	free(cg);
 	return 0;
 }
