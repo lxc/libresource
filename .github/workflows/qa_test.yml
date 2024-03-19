@@ -77,7 +77,10 @@ jobs:
         name: build-artifacts
     - name: Run MEM tests
       run: |
-        ./tests/MEM/mem.sh
+        cd tests/MEM
+        make clean
+        make
+        ./mem.sh
     - uses: actions/upload-artifact@master
       if: failure()
       with: 
