@@ -16,6 +16,9 @@ jobs:
       run: |
         make TEST_FLAG=-DTESTING
         ls
+        cd tests/MEM
+        make clean
+        make
     - run: |
         mkdir artifacts
     - uses: actions/upload-artifact@master
