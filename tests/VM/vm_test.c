@@ -25,7 +25,6 @@
 int main(int argc, char **argv)
 {
         struct vmstat data, exist;
-	unsigned long value;
 	FILE *fp;
 	int ret;
 
