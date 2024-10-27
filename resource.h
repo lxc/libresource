@@ -139,6 +139,12 @@ typedef struct res_blk {
 #define CPU_MIN				6000
 #define RES_CPU_INFO			6001
 #define RES_CPU_CORECOUNT		6002
+#define RES_CPU_STAT_USAGE		6003
+#define RES_CPU_STAT_USER		6004
+#define RES_CPU_STAT_SYSTEM		6005
+#define RES_CPU_WEIGHT			6006
+#define RES_CPU_WEIGHT_NICE		6007
+#define RES_CPU_MAX			6008
 #define CPU_MAX 			6010
 
 #define STAT_MIN			7000

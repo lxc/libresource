@@ -20,10 +20,14 @@
 #define _RESCPU_H
 
 #define CPUINFO_FILE "/proc/cpuinfo"
+#define CPUCGNAME       "cpu"
+#define MEMBUF_2048	2048
 
 extern int getcpuinfo(int res_id, void *out, size_t sz, void **hint, 
-			int flags);
+		      int flags);
 extern int getcpuexist(int res_id, void *exist, size_t sz, void *hint,
-			int flags);
+		       int flags);
+extern int getcpuinfo_cg(int res_id, void *out, size_t sz,
+			 void **hint, int pid, int flags);
 
 #endif /* _RESCPU_H */

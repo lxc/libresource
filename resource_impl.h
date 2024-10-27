@@ -136,6 +136,7 @@ static inline char *get_cgroup(pid_t pid, const char *contrl)
 		fclose(fp);
 		return NULL;
 	}
+	printf("Returning cgrp %s\n", cgrp);
 	fclose(fp);
 	return cgrp;
 }

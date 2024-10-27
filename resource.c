@@ -205,8 +205,14 @@ int res_read(int res_id, void *out, size_t out_sz, void **hint, int pid, int fla
 	if (res_id >= VM_MIN && res_id < VM_MAX)
 		return getvmstatinfo(res_id, out, out_sz, hint, flags);
 
-	if (res_id >= CPU_MIN && res_id < CPU_MAX)
-		return getcpuinfo(res_id, out, out_sz, hint, flags);
+	if (res_id >= CPU_MIN && res_id < CPU_MAX) {
+		if (pid > 0) {
+			return getcpuinfo_cg(res_id, out, out_sz, hint,
+					     pid, flags);
+		} else {
+			return getcpuinfo(res_id, out, out_sz, hint, flags);
+		}
+	}
 
 	if (res_id >= ROUTE_MIN && res_id < ROUTE_MAX)
 		return getrouteinfo(res_id, out, out_sz, hint, flags);
